@@ -8,7 +8,7 @@
 /.bundle
 
 # Ignore all environment files.
-/.env*
+/.env
 
 # Ignore all logfiles and tempfiles.
 /log/*
@@ -33,3 +33,10 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+
+/app/assets/builds/*
+!/app/assets/builds/.keep
+.DS_Store
+
+# Coverage report (simplecov, opt-in via COVERAGE=true).
+/coverage

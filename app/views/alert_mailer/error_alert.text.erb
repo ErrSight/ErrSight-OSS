@@ -1,0 +1,23 @@
+[ErrSight · <%= @project.name %>]
+
+New <%= @event.level %> captured on <%= @event.environment %>
+Time: <%= @event.occurred_at.strftime("%b %-d, %Y · %H:%M:%S UTC") %>
+
+Message:
+  <%= @event.message.truncate(500) %>
+<%
+  frames    = event_frames(@event)
+  raised_in = event_first_frame_label(@event, frames)
+  causes    = event_causes(@event)
+-%>
+<% if raised_in.present? -%>
+At: <%= raised_in %>
+<% end -%>
+<% causes.each do |c| -%>
+  rescued from <%= c["class"] %><% if c["message"].to_s.strip != "" %>: <%= c["message"].to_s.truncate(160) %><% end %>
+<% end -%>
+
+View event details: <%= @event_url %>
+
+--
+You're receiving this because you have alerts enabled for <%= @project.name %>.

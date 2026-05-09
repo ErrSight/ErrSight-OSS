@@ -1,0 +1,22 @@
+<% content_for :title, "Unsubscribed — ErrSight" %>
+
+<div style="width: 100%; max-width: 420px; margin: 64px auto 0;">
+  <section class="panel" style="padding: 32px 28px; text-align: center;">
+    <% if @membership %>
+      <h1 style="font-family: var(--sans); font-weight: 500; letter-spacing: -0.025em; font-size: 22px; margin: 0 0 8px; color: var(--fg);"><em style="font-family: var(--serif); font-style: italic; color: var(--accent); font-weight: 400;">Unsubscribed</em></h1>
+      <p style="margin: 0; font-size: 13.5px; color: var(--fg-dim); line-height: 1.55;">
+        You won't receive the weekly digest for <strong style="color: var(--fg);"><%= @organization_name %></strong> anymore.
+      </p>
+      <p style="margin: 14px 0 0; font-family: var(--mono); font-size: 11.5px; color: var(--fg-dimmer);">
+        Changed your mind? Re-enable it from
+        <%= link_to "account settings", edit_user_registration_path, style: "color: var(--accent); text-decoration: underline;" %>.
+      </p>
+    <% else %>
+      <h1 style="font-family: var(--sans); font-weight: 500; letter-spacing: -0.025em; font-size: 22px; margin: 0 0 8px; color: var(--err);">Link expired or invalid</h1>
+      <p style="margin: 0; font-size: 13.5px; color: var(--fg-dim); line-height: 1.55;">
+        We couldn't verify this unsubscribe link. Manage email preferences from
+        <%= link_to "account settings", edit_user_registration_path, style: "color: var(--accent); text-decoration: underline;" %>.
+      </p>
+    <% end %>
+  </section>
+</div>

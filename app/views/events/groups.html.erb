@@ -1,0 +1,192 @@
+<% content_for :title, "Issues — #{@project.name} — ErrSight" %>
+
+<%
+  org       = @project.organization
+  org_slug  = org&.slug || "workspace"
+  proj_slug = @project.slug.presence || @project.id
+  shown     = @groups.count
+  unresolved_count = @groups.count { |g| !g.all_resolved }
+  total_occurrences = @groups.sum(&:occurrences)
+  total_users       = @groups.sum { |g| g.affected_users.to_i }
+  cur_env   = params[:environment]
+  cur_q     = params[:q]
+
+  group_link_params = ->(extras = {}) {
+    { environment: cur_env.presence, q: cur_q.presence, show_muted: (@show_muted ? "true" : nil) }
+      .compact.merge(extras)
+  }
+%>
+
+<!-- breadcrumb -->
+<div class="crumb">
+  <span class="dim">~</span>
+  <span>/</span>
+  <span class="k">errsight</span>
+  <span>/</span>
+  <span class="k"><%= org_slug %></span>
+  <span>/</span>
+  <span class="k"><%= proj_slug %></span>
+  <span>/</span>
+  <span class="k">events</span>
+  <span class="caret"></span>
+</div>
+
+<!-- page head -->
+<div class="page-head">
+  <div>
+    <div class="eyebrow">
+      <span class="dot"></span>
+      <% if @project.ingestion_paused? %>
+        PAUSED · ingestion disabled
+      <% elsif shown.positive? %>
+        LIVE · <%= pluralize(unresolved_count, 'unresolved issue') %>
+      <% else %>
+        QUIET · no grouped events in view
+      <% end %>
+    </div>
+    <h1 class="page-title">Issues <em>feed</em>.</h1>
+    <div class="page-sub">
+      <span><span class="k"><%= number_with_delimiter(shown) %></span> <%= 'group'.pluralize(shown) %></span>
+      <span><span class="k"><%= number_with_delimiter(unresolved_count) %></span> unresolved</span>
+      <span><span class="k"><%= number_with_delimiter(total_occurrences) %></span> <%= 'event'.pluralize(total_occurrences) %></span>
+      <span><span class="k"><%= number_with_delimiter(total_users) %></span> <%= 'user'.pluralize(total_users) %> affected</span>
+    </div>
+  </div>
+  <div style="display:flex; gap: 10px;">
+    <%= link_to export_project_events_path(@project, format: :csv, environment: cur_env), class: "btn btn-secondary" do %>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v12m-6-6 6-6 6 6M4 20h16"/></svg>
+      Export CSV
+    <% end %>
+    <%= link_to project_events_path(@project), class: "btn btn-primary" do %>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 12h3l3-8 4 16 3-8h5"/></svg>
+      Raw stream
+    <% end %>
+  </div>
+</div>
+
+<!-- time series -->
+<%= render "projects/time_series", project: @project, environment: cur_env, title: "Event volume" %>
+
+<!-- filter bar -->
+<%= form_with url: groups_project_events_path(@project), method: :get, local: true, class: "filter-bar", data: { controller: "auto-submit" } do |f| %>
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-5-5m2-6a8 8 0 1 1-16 0 8 8 0 0 1 16 0z"/></svg>
+    <%= f.text_field :q, value: cur_q, placeholder: "Search message · fingerprint prefix · tag", autocomplete: "off" %>
+    <span class="kbd">↵</span>
+  </div>
+  <div class="filter-btns">
+    <% if @environments.any? %>
+      <label class="filter-btn<%= ' active' if cur_env.present? %>" style="padding: 6px 10px;">
+        <span>env:</span>
+        <%= f.select :environment,
+              [["all", ""]] + @environments.map { |e| [e, e] },
+              { selected: cur_env },
+              class: "val",
+              style: "background: transparent; border: 0; color: inherit; font: inherit; outline: none; cursor: pointer; padding: 0;",
+              data: { action: "change->auto-submit#submit" } %>
+      </label>
+    <% end %>
+    <% if @show_muted %>
+      <%= f.hidden_field :show_muted, value: "true" %>
+      <%= link_to groups_project_events_path(@project, environment: cur_env, q: cur_q), class: "filter-btn active" do %>
+        <span>muted:</span><span class="val">visible</span><span class="close">×</span>
+      <% end %>
+    <% else %>
+      <%= link_to groups_project_events_path(@project, environment: cur_env, q: cur_q, show_muted: "true"), class: "filter-btn" do %>
+        <span>muted:</span><span class="val">hidden</span>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>
+
+<!-- view toolbar -->
+<div class="view-toolbar">
+  <span class="count"><%= pluralize(shown, 'issue') %></span>
+  <span>·</span>
+  <span>sorted by <span style="color: var(--fg);">last seen ↓</span></span>
+  <div class="right">
+    <span>view:</span>
+    <div class="view-switch">
+      <a class="active">Issues</a>
+      <%= link_to "Raw events", project_events_path(@project, environment: cur_env) %>
+    </div>
+  </div>
+</div>
+
+<!-- issues list -->
+<div class="panel">
+  <div class="col-head grouped">
+    <span></span>
+    <span>fingerprint</span>
+    <span>issue</span>
+    <span>events / users</span>
+    <span>assignee</span>
+    <span>last seen</span>
+    <span></span>
+  </div>
+
+  <% if @groups.empty? %>
+    <div style="padding: 56px 24px; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--fg-dim);">
+      <div style="font-family: var(--sans); font-size: 16px; color: var(--fg); margin-bottom: 6px;">No grouped events yet</div>
+      <div>Send your first event — issues show up here once they're fingerprinted.</div>
+    </div>
+  <% else %>
+    <% @groups.each do |group| %>
+      <% sev_name = Event.levels.key(group.severity.to_i) || 'info' %>
+      <% issue = @issues_by_fingerprint[group.fingerprint] %>
+      <% fp_short = group.fingerprint.to_s[0, 8] %>
+
+      <%= link_to project_issue_path(@project, group.fingerprint),
+            class: "iss-row#{' muted' if group.muted}" do %>
+        <div class="sev <%= sev_name %>"></div>
+        <div class="fp"><%= fp_short %></div>
+        <div class="msg">
+          <div class="t"><%= group.last_message.to_s.truncate(200) %></div>
+          <div class="meta">
+            <span class="tag env"><span class="k">lvl:</span><span class="v"><%= sev_name %></span></span>
+            <% if group.all_resolved %>
+              <span class="resolved-badge">resolved</span>
+            <% elsif group.any_resolved %>
+              <span class="tag"><span class="v">partially resolved</span></span>
+            <% end %>
+            <% if group.muted %>
+              <span class="tag mute">muted</span>
+            <% end %>
+            <% if issue&.external_url.present? %>
+              <span class="tag rel"><span class="k">link:</span><span class="v">↗</span></span>
+            <% end %>
+          </div>
+        </div>
+        <div class="cnt">
+          <div class="n"><%= number_with_delimiter(group.occurrences) %></div>
+          <div class="l">
+            <% if group.affected_users.to_i.positive? %>
+              <%= pluralize(group.affected_users.to_i, 'user') %> affected
+            <% else %>
+              no users tracked
+            <% end %>
+          </div>
+        </div>
+        <div class="assignee">
+          <% if issue&.assigned_to %>
+            <div class="av" title="<%= issue.assigned_to.email %>">
+              <%= issue.assigned_to.email.to_s[0].to_s.upcase %>
+            </div>
+          <% else %>
+            <div class="av unassigned">+</div>
+          <% end %>
+        </div>
+        <div class="last">
+          <span class="ago"><%= time_ago_in_words(group.last_seen) %> ago</span>
+          <span class="abs"><%= group.last_seen.strftime("%H:%M:%S") if group.last_seen.respond_to?(:strftime) %></span>
+        </div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+      <% end %>
+    <% end %>
+
+    <div class="list-foot">
+      <span><%= pluralize(shown, 'issue') %> · <%= number_with_delimiter(total_occurrences) %> <%= 'event'.pluralize(total_occurrences) %></span>
+      <span><%= cur_env.present? ? "env: #{cur_env}" : "all environments" %></span>
+    </div>
+  <% end %>
+</div>

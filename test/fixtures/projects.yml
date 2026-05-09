@@ -1,0 +1,49 @@
+alpha:
+  name: Alpha Project
+  slug: alpha-project
+  api_key: elp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  events_count: 2
+  storage_bytes: 450
+  ingestion_paused: false
+  user: regular
+  organization: regular_org
+
+beta:
+  name: Beta Project
+  slug: beta-project
+  api_key: elp_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  events_count: 0
+  storage_bytes: 0
+  ingestion_paused: true
+  user: regular
+  organization: regular_org
+
+admin_project:
+  name: Admin Project
+  slug: admin-project
+  api_key: elp_cccccccccccccccccccccccccccccccccccccccccccccccc
+  events_count: 0
+  storage_bytes: 0
+  ingestion_paused: false
+  user: admin
+  organization: admin_org
+
+over_storage_project:
+  name: Over Storage Project
+  slug: over-storage-project
+  api_key: elp_dddddddddddddddddddddddddddddddddddddddddddddddd
+  events_count: 5
+  storage_bytes: 268435456
+  ingestion_paused: false
+  user: over_limit
+  organization: over_limit_org
+
+team_project:
+  name: Team Project
+  slug: team-project
+  api_key: elp_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+  events_count: 0
+  storage_bytes: 0
+  ingestion_paused: false
+  user: team_owner
+  organization: team_org

@@ -1,0 +1,31 @@
+<%
+  field_style = "width:100%; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 12px; font-family: var(--mono); font-size: 12.5px;"
+%>
+<%= form_with model: webhook_endpoint, url: url, method: method do |f| %>
+  <% if webhook_endpoint.errors.any? %>
+    <div style="border: 1px solid color-mix(in oklab, var(--err) 30%, transparent); background: color-mix(in oklab, var(--err) 10%, transparent); color: var(--err); border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px;">
+      <ul style="margin:0; padding-left: 18px;">
+        <% webhook_endpoint.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div style="display:grid; gap: 14px;">
+    <div>
+      <%= f.label :url, "Endpoint URL", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+      <%= f.url_field :url, placeholder: "https://example.com/hooks/errsight", style: field_style %>
+    </div>
+
+    <label style="display:inline-flex; align-items:center; gap:8px; font-family: var(--sans); font-size: 13.5px; color: var(--fg); cursor:pointer;">
+      <%= f.check_box :active, style: "accent-color: var(--accent); width:14px; height:14px;" %>
+      Active
+    </label>
+  </div>
+
+  <div style="display:flex; gap:10px; margin-top: 18px;">
+    <%= f.submit submit_label, class: "btn btn-primary btn-sm" %>
+    <%= link_to "Cancel", project_webhook_endpoints_path(@project), class: "btn btn-ghost btn-sm" %>
+  </div>
+<% end %>

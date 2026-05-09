@@ -1,0 +1,35 @@
+<% show_project_name = local_assigns.fetch(:show_project, false) %>
+<% target_project = show_project_name ? event.project : @project %>
+<% target_path = target_project ? project_event_path(target_project, event) : "#" %>
+
+<div id="event-<%= event.id %>" class="iss-row<%= ' muted' if event.resolved? %>" style="display:grid; grid-template-columns: 64px 1fr auto; gap:14px; align-items:start; padding: var(--row-pad) 18px; border-bottom: 1px solid var(--line); transition: background 0.12s;">
+  <span class="lvl <%= event.level %>" style="margin-top:2px; width:fit-content; min-width:56px;"><%= event.level.upcase %></span>
+
+  <div style="min-width:0;">
+    <%= link_to target_path, style: "color: var(--fg); text-decoration:none; font-weight:500; font-size:14px; letter-spacing:-0.005em; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" do %>
+      <% if event.resolved? %>
+        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background: var(--ok); margin-right:6px; vertical-align:middle;"></span>
+      <% end %>
+      <%= event.message %>
+    <% end %>
+    <div style="margin-top:4px; display:flex; align-items:center; gap:10px; font-family: var(--mono); font-size: 11px; color: var(--fg-dim); flex-wrap: wrap;">
+      <span><%= event.environment %></span>
+      <% if show_project_name %>
+        <span style="color: var(--fg-dimmer);">·</span>
+        <span style="color: var(--accent);"><%= event.project.name %></span>
+      <% end %>
+      <span style="color: var(--fg-dimmer);">·</span>
+      <span title="<%= event.occurred_at %>"><%= time_ago_in_words(event.occurred_at) %> ago</span>
+      <% if event.fingerprint.present? %>
+        <span style="color: var(--fg-dimmer);">·</span>
+        <span style="color: var(--accent);"><%= event.fingerprint %></span>
+      <% end %>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:8px;">
+    <% if event.resolved? %>
+      <span class="tag" style="background: color-mix(in oklab, var(--ok) 14%, transparent); color: var(--ok); border: 1px solid color-mix(in oklab, var(--ok) 30%, transparent);">Resolved</span>
+    <% end %>
+  </div>
+</div>

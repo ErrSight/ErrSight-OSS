@@ -1,0 +1,115 @@
+<% content_for :title, "Issue #{@issue.fingerprint[0, 8]} — #{@project.name}" %>
+
+<% last_event = @events.first %>
+
+<div style="font-family: var(--mono); font-size: 11.5px; color: var(--fg-dim); display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+  <%= link_to @project.name, project_path(@project), style: "color: var(--fg-dim); text-decoration:none;" %>
+  <span style="color: var(--fg-dimmer);">/</span>
+  <%= link_to "Issues", groups_project_events_path(@project), style: "color: var(--fg-dim); text-decoration:none;" %>
+  <span style="color: var(--fg-dimmer);">/</span>
+  <span style="color: var(--accent);"><%= @issue.fingerprint %></span>
+</div>
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">
+      <% level = last_event&.level.to_s %>
+      <% if level.present? %>
+        <span class="lvl <%= level %>" style="margin-right:4px;"><%= level.upcase %></span>
+      <% end %>
+      <span class="dot" style="background: var(--err); box-shadow: 0 0 8px color-mix(in oklab, var(--err) 60%, transparent);"></span>
+      Active issue
+    </div>
+    <h1 class="page-title"><%= last_event&.message || "(no recent events)" %></h1>
+    <div class="page-sub">
+      <span><span class="k"><%= pluralize(@events.size, "recent event") %></span></span>
+      <% if last_event %>
+        <span>Last seen <span class="k"><%= time_ago_in_words(last_event.occurred_at) %></span> ago</span>
+      <% end %>
+      <span>Fingerprint <span class="k" style="color: var(--accent);"><%= @issue.fingerprint %></span></span>
+    </div>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <%= link_to "View events", project_events_path(@project, fingerprint: @issue.fingerprint), class: "btn btn-secondary btn-sm" %>
+  </div>
+</div>
+
+<%= render "projects/time_series",
+      project: @project,
+      fingerprint: @issue.fingerprint,
+      title: "Occurrences" %>
+
+<section class="panel" style="margin-top:22px;">
+  <div class="panel-head">
+    <span class="title">Triage</span>
+  </div>
+  <div style="padding:18px;">
+    <%= form_with model: @issue, url: project_issue_path(@project, @issue.fingerprint),
+          method: :patch, data: { turbo: false } do |f| %>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px;">
+        <div>
+          <%= f.label :assigned_to_id, "Assignee", class: "t-eyebrow", style: "display:block; margin-bottom:8px;" %>
+          <%= f.select :assigned_to_id,
+                [["Unassigned", ""]] + @assignable_users.uniq.map { |u| [u.name.present? ? "#{u.name} (#{u.email})" : u.email, u.id] },
+                { selected: @issue.assigned_to_id },
+                style: "width:100%; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 12px; font-family: var(--sans); font-size: 13.5px;" %>
+        </div>
+        <div>
+          <%= f.label :external_url, "External link (GitHub / Linear / Jira)", class: "t-eyebrow", style: "display:block; margin-bottom:8px;" %>
+          <%= f.url_field :external_url, placeholder: "https://github.com/acme/app/issues/42",
+                style: "width:100%; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 12px; font-family: var(--mono); font-size: 12.5px;" %>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:18px;">
+        <% if @issue.external_url.present? %>
+          <%= link_to "Open linked issue ↗", @issue.external_url, target: "_blank", style: "font-family: var(--mono); font-size: 11.5px; color: var(--accent); text-decoration:none;" %>
+        <% else %>
+          <span></span>
+        <% end %>
+        <%= f.submit "Save", class: "btn btn-primary btn-sm" %>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<section class="panel" style="margin-top:22px;">
+  <div class="panel-head">
+    <span class="title">Discussion</span>
+    <span class="right"><%= pluralize(@comments.size, "comment") %></span>
+  </div>
+  <div style="padding:18px;">
+    <% if @comments.any? %>
+      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:18px;">
+        <% @comments.each do |c| %>
+          <div style="border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: color-mix(in oklab, var(--bg-2) 40%, var(--bg-3));">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <div style="font-family: var(--mono); font-size: 11.5px; color: var(--fg-dim);">
+                <strong style="color: var(--fg); font-weight: 500;"><%= c.user&.name || "Deleted user" %></strong>
+                · <%= time_ago_in_words(c.created_at) %> ago
+              </div>
+              <% if c.user_id == current_user.id || current_user.admin? %>
+                <%= button_to "Remove", project_issue_comment_path(@project, @issue.fingerprint, c),
+                      method: :delete,
+                      form: { style: "display:inline;" },
+                      style: "background:transparent; border:0; padding:0; font-family: var(--mono); font-size: 11px; color: var(--err); cursor:pointer;",
+                      data: { turbo_confirm: "Remove this comment?" } %>
+              <% end %>
+            </div>
+            <p style="margin: 8px 0 0; font-size: 14px; color: var(--fg); line-height: 1.55; white-space: pre-wrap;"><%= c.body %></p>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%= form_with url: project_issue_comments_path(@project, @issue.fingerprint),
+          method: :post, data: { turbo: false } do %>
+      <%= text_area_tag "issue_comment[body]", nil,
+            rows: 3,
+            placeholder: "Add a note for the team…",
+            style: "width:100%; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 10px; padding: 10px 12px; font-family: var(--sans); font-size: 14px; line-height: 1.55; resize: vertical;" %>
+      <div style="margin-top: 10px; text-align: right;">
+        <%= submit_tag "Post comment", class: "btn btn-primary btn-sm" %>
+      </div>
+    <% end %>
+  </div>
+</section>

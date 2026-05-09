@@ -1,0 +1,216 @@
+<% content_for :title, "#{@project.name} — ErrSight" %>
+
+<%
+  events_this_month = @project.events.where("occurred_at >= ?", Date.current.beginning_of_month).count
+%>
+
+<%# ============ HEADER ============ %>
+<div style="display:grid; grid-template-columns: 1fr auto; gap: 24px; align-items: start; padding: 0 0 14px;">
+  <div>
+    <div class="eyebrow" style="margin-bottom: 10px;">
+      <% if @project.ingestion_paused? %>
+        <span class="dot" style="background: var(--err); box-shadow: 0 0 8px color-mix(in oklab, var(--err) 60%, transparent);"></span>
+        Ingestion paused
+      <% else %>
+        <span class="dot"></span>
+        Accepting events
+      <% end %>
+      <span class="kbd"><%= @project.slug %></span>
+    </div>
+    <h1 style="font-family: var(--sans); font-weight: 500; letter-spacing: -0.025em; font-size: 28px; line-height: 1.15; margin: 0; color: var(--fg);"><%= @project.name %></h1>
+    <div style="margin-top: 6px; font-family: var(--mono); font-size: 11.5px; color: var(--fg-dim); display:flex; gap: 14px; flex-wrap: wrap;">
+      <span>created <span style="color: var(--fg);"><%= time_ago_in_words(@project.created_at) %></span> ago</span>
+      <span>rate <span style="color: var(--fg);"><%= @project.rate_limit_per_minute.zero? ? "unlimited" : "#{@project.rate_limit_per_minute}/min" %></span></span>
+    </div>
+  </div>
+  <div style="display:flex; gap:6px; align-items:center;">
+    <%= link_to "Settings", edit_project_path(@project), class: "btn btn-secondary btn-sm" %>
+  </div>
+</div>
+
+<%# ============ API KEY (inline bar) ============ %>
+<div class="pc-api-bar" data-controller="copy" style="padding: 7px 10px; font-size: 11.5px; margin-bottom: 14px;">
+  <span class="k">X-API-Key</span>
+  <span class="v" data-copy-target="content" style="flex:1; color: var(--accent); letter-spacing: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= @project.api_key %></span>
+  <button type="button" data-action="click->copy#copy" class="btn btn-ghost btn-sm" style="font-family:var(--mono); font-size:10.5px; padding: 2px 6px;">copy</button>
+  <span style="width:1px; height:14px; background: var(--line); margin: 0 2px;"></span>
+  <%= link_to "Manage", project_api_keys_path(@project), style: "font-family: var(--mono); font-size: 10.5px; color: var(--fg-dim); text-decoration:none; padding: 2px 6px;" %>
+  <%= link_to "Erase", new_project_data_erasure_path(@project), style: "font-family: var(--mono); font-size: 10.5px; color: var(--fg-dim); text-decoration:none; padding: 2px 6px;" %>
+  <%= button_to "Rotate", rotate_api_key_project_path(@project),
+        method: :post,
+        form: { style: "display:inline;" },
+        style: "background:transparent; border:0; padding: 2px 6px; font-family: var(--mono); font-size: 10.5px; color: var(--warn); cursor:pointer;",
+        data: { turbo_confirm: "Rotate API key? Existing integrations will stop working." } %>
+</div>
+
+<%# ============ STAT STRIP ============ %>
+<div class="stat-strip" style="border-radius: 10px;">
+  <div class="stat" style="padding: 10px 14px;">
+    <div class="l">Total events</div>
+    <div class="n" style="font-size: 20px; margin-top: 4px;"><%= number_with_delimiter(@project.events_count) %></div>
+    <div class="sub" style="margin-top: 2px;">lifetime</div>
+  </div>
+  <div class="stat" style="padding: 10px 14px;">
+    <div class="l">Storage</div>
+    <div class="n" style="font-size: 20px; margin-top: 4px;"><%= number_to_human_size(@project.storage_bytes) %></div>
+    <div class="sub" style="margin-top: 2px;">used</div>
+  </div>
+  <%= link_to project_events_path(@project, resolved: "false", level: "error"),
+        class: "stat", style: "text-decoration:none; color:inherit; padding: 10px 14px;" do %>
+    <div class="l">Unresolved</div>
+    <div class="n" style="color: var(--err); font-size: 20px; margin-top: 4px;"><%= number_with_delimiter(@unresolved_errors_count) %></div>
+    <div class="sub" style="margin-top: 2px;">errors &middot; review →</div>
+  <% end %>
+  <div class="stat" style="padding: 10px 14px;">
+    <div class="l">This month</div>
+    <div class="n" style="font-size: 20px; margin-top: 4px;"><em style="font-size: 18px;"><%= number_with_delimiter(events_this_month) %></em></div>
+    <div class="sub" style="margin-top: 2px;">events ingested</div>
+  </div>
+</div>
+
+<%# ============ QUICK SETUP ============ %>
+<section class="panel" style="margin-top: 12px;" data-controller="tabs" data-tabs-active-value="ruby">
+  <div class="panel-head" style="padding: 10px 14px;">
+    <span class="title">Quick setup</span>
+    <span class="right" style="gap: 8px;">
+      <%= link_to "Full docs ↗", docs_path, target: "_blank" %>
+    </span>
+  </div>
+  <div class="tabs" style="padding: 0 12px;">
+    <button type="button" class="tab active" data-tabs-target="tab" data-tab="ruby" data-action="click->tabs#show" style="padding: 8px 12px;">Ruby / Rails</button>
+    <button type="button" class="tab" data-tabs-target="tab" data-tab="react" data-action="click->tabs#show" style="padding: 8px 12px;">React / JS</button>
+    <button type="button" class="tab" data-tabs-target="tab" data-tab="react-native" data-action="click->tabs#show" style="padding: 8px 12px;">React Native</button>
+    <button type="button" class="tab" data-tabs-target="tab" data-tab="curl" data-action="click->tabs#show" style="padding: 8px 12px;">cURL</button>
+  </div>
+
+  <%
+    step = ->(n, txt) {
+      ("<div class=\"t-eyebrow\" style=\"margin:0 0 6px;\"><span style=\"color:var(--accent);\">#{n}</span> &middot; #{txt}</div>").html_safe
+    }
+    code_box = "padding: 8px 12px; align-items:flex-start; font-family: var(--mono); font-size: 12px; line-height: 1.6; white-space: pre; overflow-x: auto;"
+    copy_btn = "font-family:var(--mono); font-size:10.5px; padding: 2px 6px;"
+  %>
+
+  <%# ----- Ruby ----- %>
+  <div data-tabs-target="panel" data-tab="ruby" style="padding: 12px 14px;">
+    <div style="display:grid; gap: 10px;">
+      <div>
+        <%= step.call("01", "Add to your Gemfile") %>
+        <div class="pc-api-bar" data-controller="copy" style="<%= code_box %>">
+          <code class="v" data-copy-target="content" style="color: var(--accent); letter-spacing:0;">gem "errsight"</code>
+          <button type="button" data-action="click->copy#copy" class="btn btn-ghost btn-sm" style="<%= copy_btn %>">copy</button>
+        </div>
+      </div>
+      <div>
+        <%= step.call("02", "Create config/initializers/errsight.rb") %>
+        <div class="pc-api-bar" data-controller="copy" style="<%= code_box %>"><code class="v" data-copy-target="content" style="flex:1; white-space:pre;">Errsight.configure do |config|
+  config.api_key                = "<%= @project.api_key %>"
+  config.environment            = Rails.env
+  config.host                   = "<%= request.base_url %>"
+  config.attach_to_rails_logger = Rails.env.development?
+  config.min_level              = Rails.env.development? ? :debug : :warning
+end</code><button type="button" data-action="click->copy#copy" class="btn btn-ghost btn-sm" style="<%= copy_btn %>">copy</button></div>
+      </div>
+    </div>
+  </div>
+
+  <%# ----- React ----- %>
+  <div data-tabs-target="panel" data-tab="react" class="hidden" style="padding: 12px 14px;">
+    <div style="display:grid; gap: 10px;">
+      <div>
+        <%= step.call("01", "Install the package") %>
+        <div class="pc-api-bar" data-controller="copy" style="<%= code_box %>"><code class="v" data-copy-target="content" style="flex:1; white-space:pre;">npm install errsight</code><button type="button" data-action="click->copy#copy" class="btn btn-ghost btn-sm" style="<%= copy_btn %>">copy</button></div>
+      </div>
+      <div>
+        <%= step.call("02", "Initialize in main.jsx") %>
+        <div class="pc-api-bar" data-controller="copy" style="<%= code_box %>"><code class="v" data-copy-target="content" style="flex:1; white-space:pre;">import Errsight from "errsight"
+
+Errsight.init({
+  apiKey:      "<%= @project.api_key %>",
+  environment: import.meta.env.MODE,
+})</code><button type="button" data-action="click->copy#copy" class="btn btn-ghost btn-sm" style="<%= copy_btn %>">copy</button></div>
+      </div>
+      <div>
+        <%= step.call("03", "Wrap with ErrorBoundary") %>
+        <div class="pc-api-bar" data-controller="copy" style="<%= code_box %>"><code class="v" data-copy-target="content" style="flex:1; white-space:pre;">import { ErrorBoundary } from "errsight/react"
+
+root.render(
+  &lt;ErrorBoundary&gt;&lt;App /&gt;&lt;/ErrorBoundary&gt;
+)</code><button type="button" data-action="click->copy#copy" class="btn btn-ghost btn-sm" style="<%= copy_btn %>">copy</button></div>
+      </div>
+    </div>
+  </div>
+
+  <%# ----- React Native ----- %>
+  <div data-tabs-target="panel" data-tab="react-native" class="hidden" style="padding: 12px 14px;">
+    <div style="display:grid; gap: 10px;">
+      <div>
+        <%= step.call("01", "Install") %>
+        <div class="pc-api-bar" data-controller="copy" style="<%= code_box %>"><code class="v" data-copy-target="content" style="flex:1; white-space:pre;">npm install errsight-rn</code><button type="button" data-action="click->copy#copy" class="btn btn-ghost btn-sm" style="<%= copy_btn %>">copy</button></div>
+      </div>
+      <div>
+        <%= step.call("02", "Initialize in App.tsx") %>
+        <div class="pc-api-bar" data-controller="copy" style="<%= code_box %>"><code class="v" data-copy-target="content" style="flex:1; white-space:pre;">import { init } from "errsight-rn"
+
+init({
+  apiKey:      "<%= @project.api_key %>",
+  environment: "production",
+})</code><button type="button" data-action="click->copy#copy" class="btn btn-ghost btn-sm" style="<%= copy_btn %>">copy</button></div>
+      </div>
+    </div>
+  </div>
+
+  <%# ----- cURL ----- %>
+  <div data-tabs-target="panel" data-tab="curl" class="hidden" style="padding: 12px 14px;">
+    <div style="display:grid; gap: 10px;">
+      <div>
+        <%= step.call("01", "Send a single event") %>
+        <div class="pc-api-bar" data-controller="copy" style="<%= code_box %>"><code class="v" data-copy-target="content" style="flex:1; white-space:pre;">curl -X POST <%= request.base_url %>/api/v1/events \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: <%= @project.api_key %>" \
+  -d '{"level":"error","message":"Payment failed","environment":"production"}'</code><button type="button" data-action="click->copy#copy" class="btn btn-ghost btn-sm" style="<%= copy_btn %>">copy</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%# ============ TIME SERIES ============ %>
+<%= render "projects/time_series", project: @project, environment: params[:environment] %>
+
+<%# ============ RECENT EVENTS ============ %>
+<section class="panel" style="margin-top: 12px;">
+  <div class="panel-head" style="padding: 10px 14px;">
+    <span class="title">Recent events</span>
+    <span class="right" style="gap: 8px;">
+      <% if @environments.any? %>
+        <%= form_with url: project_path(@project), method: :get, style: "display:flex; gap:6px; align-items:center;" do |f| %>
+          <%= f.select :environment, [["all envs", ""]] + @environments.map { |e| [e, e] },
+                { selected: params[:environment] },
+                style: "background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 6px; padding: 2px 6px; font-family: var(--mono); font-size: 11px;" %>
+          <%= f.select :level, [["all levels", ""]] + Event.levels.keys.map { |l| [l, l] },
+                { selected: params[:level] },
+                style: "background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 6px; padding: 2px 6px; font-family: var(--mono); font-size: 11px;" %>
+          <%= f.submit "filter", class: "btn btn-primary btn-sm", style: "padding: 3px 8px; font-size: 11px;" %>
+        <% end %>
+      <% end %>
+      <%= link_to "All →", project_events_path(@project) %>
+      <%= link_to "Logs →", logs_project_events_path(@project) %>
+    </span>
+  </div>
+
+  <% if @events.empty? %>
+    <div style="padding: 28px 14px; text-align: center;">
+      <div style="font-family: var(--sans); font-weight: 500; font-size: 14px; color: var(--fg); margin-bottom: 4px;">No events yet. Nice.</div>
+      <div style="font-family: var(--mono); font-size: 11px; color: var(--fg-dim);">Drop in the gem. Fire a test error.</div>
+    </div>
+  <% else %>
+    <div id="events-list">
+      <% @events.each do |event| %>
+        <%= render "events/event_row", event: event, show_project: false %>
+      <% end %>
+    </div>
+    <div style="padding: 8px 14px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--fg-dim);">
+      <%== pagy_nav(@pagy) %>
+    </div>
+  <% end %>
+</section>

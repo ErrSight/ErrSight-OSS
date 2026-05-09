@@ -1,0 +1,186 @@
+<%
+  orgs = current_user.organizations.kept.to_a
+  # Pre-fetch sidebar data in two queries instead of 2 × orgs queries: the
+  # current user's membership row per org (for role checks) and the member
+  # count per org (for the "Team members" badge). The org-iteration block
+  # below reads from these hashes so the loop fires no further DB queries.
+  org_ids                = orgs.map(&:id)
+  memberships_by_org_id  = current_user.memberships.where(organization_id: org_ids).index_by(&:organization_id)
+  member_counts_by_org_id = Membership.where(organization_id: org_ids).group(:organization_id).count
+  # Prefer the URL-bound org (set by the page's controller); otherwise the
+  # session-scoped `current_organization` chosen via the sidebar switcher.
+  primary_org = @organization || current_organization
+  primary_membership = primary_org&.membership_for(current_user)
+  current_path = request.path
+  display_name = current_user.name.presence || current_user.email
+  avatar_letter = (current_user.name.presence || current_user.email).to_s[0].to_s.upcase
+
+  current_project_id = (defined?(@project) && @project&.persisted?) ? @project.id : nil
+  # Sidebar projects list mirrors the active org so switching the picker
+  # genuinely narrows the workspace. Falls back to every accessible project
+  # only if there's no active org (e.g. user with no memberships).
+  accessible_projects = current_user.accessible_projects.order(created_at: :desc)
+  accessible_projects = accessible_projects.where(organization_id: primary_org.id) if primary_org
+  accessible_projects = accessible_projects.to_a
+%>
+<aside class="sidebar">
+  <%= link_to dashboard_path, class: "sb-brand" do %>
+    <%= image_tag "errsight-mark-onlight.svg", alt: "ErrSight", class: "mk" %>
+    <span class="wm">Err<em>Sight</em></span>
+  <% end %>
+
+  <div class="sb-scroll">
+  <div class="sb-section-lbl">Workspace</div>
+  <nav class="sb-nav">
+    <%= link_to dashboard_path, class: "sb-item #{'active' if current_page?(dashboard_path)}" do %>
+      <span class="gl">›</span>
+      <span>Dashboard</span>
+      <span class="meta"></span>
+    <% end %>
+    <%= link_to projects_path, class: "sb-item #{'active' if controller_name == 'projects' && action_name == 'index'}" do %>
+      <span class="gl">/</span>
+      <span>All projects</span>
+      <span class="meta"><%= accessible_projects.size %></span>
+    <% end %>
+    <%= link_to search_path, class: "sb-item #{'active' if controller_name == 'search'}" do %>
+      <span class="gl">~</span>
+      <span>Search</span>
+      <span class="meta"></span>
+    <% end %>
+  </nav>
+
+  <% if accessible_projects.any? %>
+    <div class="sb-section-lbl">Projects</div>
+    <nav class="sb-nav" data-controller="sb-projects">
+      <% accessible_projects.each do |proj| %>
+        <% is_current = proj.id == current_project_id %>
+        <details class="sb-proj" data-sb-projects-target="item"<%= ' open'.html_safe if is_current %>>
+          <summary class="sb-proj-head <%= 'active' if is_current %>">
+            <span class="dot" style="background: <%= proj.ingestion_paused? ? 'var(--err)' : 'var(--ok)' %>;"></span>
+            <span class="name"><%= proj.name %></span>
+            <svg class="chev" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+          </summary>
+          <div class="sb-proj-body">
+            <%= link_to project_path(proj),
+                  class: "sb-item nested #{'active' if is_current && controller_name == 'projects' && action_name == 'show'}" do %>
+              <span>Overview</span><span class="meta"></span>
+            <% end %>
+            <%= link_to groups_project_events_path(proj),
+                  class: "sb-item nested #{'active' if is_current && controller_name == 'events' && %w[groups].include?(action_name)}" do %>
+              <span>Events</span><span class="meta"><%= number_with_delimiter(proj.events_count) %></span>
+            <% end %>
+            <%= link_to project_events_path(proj),
+                  class: "sb-item nested #{'active' if is_current && controller_name == 'events' && action_name == 'index'}" do %>
+              <span>Raw stream</span><span class="meta"></span>
+            <% end %>
+            <%= link_to logs_project_events_path(proj),
+                  class: "sb-item nested #{'active' if is_current && controller_name == 'events' && action_name == 'logs'}" do %>
+              <span>Logs</span><span class="meta"></span>
+            <% end %>
+            <%= link_to edit_project_path(proj),
+                  class: "sb-item nested #{'active' if is_current && controller_name == 'projects' && action_name == 'edit'}" do %>
+              <span>Settings</span><span class="meta"></span>
+            <% end %>
+          </div>
+        </details>
+      <% end %>
+    </nav>
+  <% end %>
+
+  <% if orgs.any? %>
+    <div class="sb-section-lbl">Organizations</div>
+    <nav class="sb-nav">
+      <% orgs.each do |org| %>
+        <% m = memberships_by_org_id[org.id] %>
+        <% org_active = @organization == org %>
+        <%= link_to organization_path(org), class: "sb-org", style: "text-decoration:none;" do %>
+          <span class="dot"></span>
+          <span><%= org.name %></span>
+          <% if org_active %><span class="switch">•</span><% end %>
+        <% end %>
+        <% if m&.admin? %>
+          <%= link_to organization_memberships_path(org),
+                class: "sb-item nested #{'active' if controller_name == 'memberships' && org_active}" do %>
+            <span>Team members</span><span class="meta"><%= member_counts_by_org_id[org.id] || 0 %></span>
+          <% end %>
+        <% end %>
+        <% if m.present? %>
+          <%= link_to edit_alert_preference_path(org),
+                class: "sb-item nested #{'active' if controller_name == 'alert_preferences' && org_active}" do %>
+            <span>Alerts</span><span class="meta"></span>
+          <% end %>
+        <% end %>
+        <% if m&.admin? %>
+          <%= link_to edit_organization_path(org),
+                class: "sb-item nested #{'active' if controller_name == 'organizations' && action_name == 'edit' && org_active}" do %>
+            <span>Settings</span><span class="meta"></span>
+          <% end %>
+        <% end %>
+      <% end %>
+    </nav>
+  <% end %>
+
+  </div>
+
+  <div class="sb-foot">
+    <% if orgs.size > 1 && current_organization %>
+      <div class="relative sb-org-switch" data-controller="dropdown">
+        <button class="sb-user" data-action="click->dropdown#toggle" type="button" aria-label="Switch organization">
+          <div class="av" style="background: linear-gradient(135deg, var(--accent), oklch(55% 0.14 250));"><%= current_organization.name.to_s[0].to_s.upcase %></div>
+          <div class="name" style="display:flex; flex-direction:column; align-items:flex-start; gap:1px; min-width:0;">
+            <span style="font-size:10.5px; font-family:var(--mono); color: var(--fg-dimmer); text-transform:uppercase; letter-spacing:0.06em;">Organization</span>
+            <span style="font-size:13px; color: var(--fg); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;"><%= current_organization.name %></span>
+          </div>
+          <div class="caret">▾</div>
+        </button>
+        <div class="sb-user-menu hidden" data-dropdown-target="menu">
+          <% orgs.each do |org| %>
+            <%= button_to activate_organization_path(org),
+                  method: :post,
+                  form: { class: "contents" },
+                  class: ("active" if org.id == current_organization.id) do %>
+              <span style="display:flex; align-items:center; gap:8px;">
+                <span style="width:6px; height:6px; border-radius:50%; background: <%= org.id == current_organization.id ? 'var(--accent)' : 'var(--line-2)' %>;"></span>
+                <span><%= org.name %></span>
+              </span>
+            <% end %>
+          <% end %>
+          <div class="divider"></div>
+          <%= link_to "+ New organization", new_organization_path %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="relative" data-controller="dropdown">
+      <button class="sb-user" data-action="click->dropdown#toggle" type="button">
+        <div class="av"><%= avatar_letter %></div>
+        <div class="name"><%= display_name %></div>
+        <div class="caret">▾</div>
+      </button>
+      <div class="sb-user-menu hidden" data-dropdown-target="menu">
+        <% if current_user.admin? %>
+          <%= link_to "Admin", admin_root_path %>
+          <div class="divider"></div>
+        <% end %>
+        <%= link_to "Account settings", edit_user_registration_path %>
+        <div class="divider"></div>
+        <%= button_to "Sign out", destroy_user_session_path, method: :delete, form: { class: "contents" }, class: "danger" %>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<%= javascript_tag nonce: true do %>
+(function() {
+  document.querySelectorAll('[data-controller~="sb-projects"]').forEach(root => {
+    const items = root.querySelectorAll('details.sb-proj');
+    items.forEach(d => {
+      d.addEventListener('toggle', () => {
+        if (d.open) {
+          items.forEach(o => { if (o !== d) o.open = false; });
+        }
+      });
+    });
+  });
+})();
+<% end %>
