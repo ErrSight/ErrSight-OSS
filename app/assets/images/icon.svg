@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512" role="img" aria-label="ErrSight logo mark">
+
+  <rect width="64" height="64" fill="#f4f6f8"></rect>
+
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#0f1419" stroke-width="3"></circle>
+
+  <path d="M 54.28 18 A 28 28 0 0 0 46 8.72" fill="none" stroke="#0f1419" stroke-width="3" stroke-linecap="round" opacity="0"></path>
+
+  <circle cx="32" cy="32" r="17" fill="none" stroke="#0f1419" stroke-width="2"></circle>
+
+  <circle cx="32" cy="32" r="6" fill="#2a5fa8"></circle>
+
+  <path d="M 29 33.5 L 32 30.5 L 35 33.5" fill="none" stroke="#f4f6f8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+
+  <circle cx="53" cy="18" r="4" fill="#2a5fa8"></circle>
+  <circle cx="53" cy="18" r="1.8" fill="#0f1419"></circle>
+</svg>

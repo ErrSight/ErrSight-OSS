@@ -1,0 +1,4 @@
+<%= turbo_stream.remove @membership %>
+<%= turbo_stream.update "flash-slot" do %>
+  <%= render "shared/flash" %>
+<% end %>

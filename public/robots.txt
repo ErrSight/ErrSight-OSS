@@ -1,1 +1,26 @@
 # See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+User-agent: *
+Allow: /
+
+# Authenticated and admin areas: no public content to index.
+Disallow: /admin
+Disallow: /jobs
+Disallow: /dashboard
+Disallow: /onboarding/
+Disallow: /users/
+Disallow: /webhooks/
+Disallow: /api/
+Disallow: /search
+Disallow: /up
+Disallow: /digest/
+Disallow: /invitations/
+Disallow: /organizations/
+Disallow: /projects/
+Disallow: /memberships/
+Disallow: /alert_preferences/
+Disallow: /saved_filters
+Disallow: /addon_packs
+Disallow: /check_email
+Disallow: /impersonate
+
+Sitemap: https://errsight.com/sitemap.xml

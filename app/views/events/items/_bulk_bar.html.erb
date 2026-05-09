@@ -1,0 +1,33 @@
+<%# Floating bulk-action bar (Issues mode). Hidden until >=1 row is selected;
+    items_select_controller toggles it and submits the chosen action. %>
+<div class="es-bulk" data-items-select-target="bar" hidden role="toolbar" aria-label="Bulk actions">
+  <span class="es-bulk-count"><b data-items-select-target="count">0</b> selected</span>
+  <span class="es-bulk-sep"></span>
+  <button type="button" class="es-bulk-btn primary" data-action="items-select#act" data-bulk-action="resolve"><span class="es-bulk-glyph">✓</span> Resolve</button>
+  <button type="button" class="es-bulk-btn" data-action="items-select#act" data-bulk-action="mute"><span class="es-bulk-glyph">⊘</span> Mute</button>
+
+  <details class="es-bulk-menu">
+    <summary class="es-bulk-btn" aria-haspopup="menu"><span class="es-bulk-glyph">◎</span> Assign</summary>
+    <div class="es-bulk-pop" role="menu" aria-label="Assign to">
+      <button type="button" class="es-bulk-pop-item" role="menuitem"
+              data-action="items-select#assign" data-items-select-assignee-id-param="<%= current_user.id %>">
+        Assign to me
+      </button>
+      <% Array(@assignable_users).uniq.reject { |u| u.id == current_user.id }.each do |u| %>
+        <button type="button" class="es-bulk-pop-item" role="menuitem"
+                data-action="items-select#assign" data-items-select-assignee-id-param="<%= u.id %>">
+          <%= u.name.presence || u.email %>
+        </button>
+      <% end %>
+      <div class="es-bulk-pop-sep"></div>
+      <button type="button" class="es-bulk-pop-item dim" role="menuitem"
+              data-action="items-select#assign" data-items-select-assignee-id-param="">
+        Unassign
+      </button>
+    </div>
+  </details>
+
+  <button type="button" class="es-bulk-btn" data-action="items-select#act" data-bulk-action="merge"><span class="es-bulk-glyph">⤞</span> Merge</button>
+  <span class="es-bulk-sep"></span>
+  <button type="button" class="es-bulk-x" data-action="items-select#clear" aria-label="Clear selection">✕</button>
+</div>

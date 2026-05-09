@@ -1,0 +1,92 @@
+<% content_for :title, "Privacy — ErrSight" %>
+<% content_for :description, "Privacy notes for this self-hosted ErrSight OSS instance. Operators should replace this with a policy that reflects their use." %>
+
+<nav class="top">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <%= image_tag "errsight-wordmark-light.svg", alt: "ErrSight", class: "brand-logo", height: 36 %>
+    </a>
+    <div class="nav-links">
+      <%= link_to "Docs", docs_path %>
+      <%= link_to "Integrations", integrations_path %>
+      <%= link_to "Support", support_path %>
+    </div>
+    <div class="nav-right">
+      <% if user_signed_in? %>
+        <%= link_to "Dashboard", authenticated_root_path, class: "btn btn-primary" %>
+      <% else %>
+        <% if public_signup_allowed? %>
+          <%= link_to "Sign in", new_user_session_path, class: "btn btn-ghost" %>
+        <% end %>
+        <%= link_to primary_cta_label, primary_cta_path, class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </div>
+</nav>
+
+<main id="main">
+<section class="legal-wrap">
+  <p class="legal-date">Template — replace with your own policy before going public.</p>
+  <h1 class="legal-title">Privacy <em>notes</em></h1>
+
+  <div class="legal-stack">
+    <p style="font-style: italic; color: var(--fg-dim);">
+      This page describes what the ErrSight OSS software does
+      with data by default. The <strong>operator</strong> of this instance is
+      responsible for the privacy policy that applies to its actual use; if
+      you're a self-hoster, replace this page with your own policy in
+      <code>app/views/pages/privacy.html.erb</code> before exposing the
+      instance to anyone outside your team.
+    </p>
+
+    <h2>1. What this software collects</h2>
+    <p>The default install collects, in the database the operator runs:</p>
+    <ul>
+      <li><strong>Account data</strong>: email, password hash (bcrypt), name, OAuth provider/uid for users who sign in with Google or GitHub.</li>
+      <li><strong>Event payloads</strong>: every event posted to <code>/api/v1/events</code> — level, message, backtrace, environment, fingerprint, request metadata, breadcrumbs, tags, and any user context (id, email, username, IP) the SDK attaches.</li>
+      <li><strong>Logs</strong>: standard Rails request logs, plus the structured `lograge` line per request.</li>
+      <li><strong>Operational metadata</strong>: project / organization configuration, alert rules, webhook endpoints, API keys, mute rules.</li>
+    </ul>
+
+    <h2>2. What this software does NOT do</h2>
+    <ul>
+      <li><strong>No third-party analytics.</strong> Mixpanel, Google Analytics, etc. are not wired up. There is no telemetry call-home.</li>
+      <li><strong>No payment processor.</strong> Billing is not part of ErrSight OSS.</li>
+      <li><strong>No external data export.</strong> Events live in the operator's own Postgres. The optional <code>errsight</code> gem can self-instrument this instance, and that is opt-in via <code>ERRSIGHT_API_KEY</code>.</li>
+    </ul>
+
+    <h2>3. Sub-processors (whoever the operator chose)</h2>
+    <p>The operator chooses where to host the database, where to run the app, and which SMTP provider to send mail through. Common choices include AWS / DigitalOcean / Hetzner / Railway for hosting, and Mailgun / SendGrid / AWS SES / Postmark for email. None of these are baked into the software — the operator wires them up through environment variables.</p>
+
+    <h2>4. Retention</h2>
+    <p>Events older than <code>RETENTION_DAYS</code> (default 30) are pruned daily. Setting it to <code>0</code> disables pruning. Soft-deleted accounts and organizations are hard-purged after a 90-day grace window (constants in <code>User</code> and <code>Organization</code>).</p>
+
+    <h2>5. Your rights as an end user</h2>
+    <p>Direct your privacy requests — access, correction, deletion, portability — to whoever operates this instance. The operator can fulfill them via the in-product Data Erasure flow or directly via the database / admin panel.</p>
+
+    <h2>6. Operator: things to swap before you publish this page</h2>
+    <ul>
+      <li>The contact address for privacy requests.</li>
+      <li>The list of sub-processors you actually use (hosting, SMTP, etc.).</li>
+      <li>Your retention policy (how long you keep events) — match what you've configured in <code>RETENTION_DAYS</code>.</li>
+      <li>Your jurisdiction-specific clauses (GDPR, CCPA, UK-DPA, etc.) if relevant.</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="container">
+    <div class="foot-bottom">
+      <span>© <%= Date.current.year %> Jijo Bose</span>
+      <span>
+        <%= link_to "Docs", docs_path %>
+        ·
+        <%= link_to "Privacy", privacy_path %>
+        ·
+        <%= link_to "Terms", terms_path %>
+      </span>
+    </div>
+  </div>
+</footer>

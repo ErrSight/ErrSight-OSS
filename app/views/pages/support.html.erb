@@ -1,0 +1,108 @@
+<% content_for :title, "Support — ErrSight" %>
+<% content_for :description, "Where to get help with this self-hosted ErrSight OSS instance and the underlying software." %>
+
+<nav class="top">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <%= image_tag "errsight-wordmark-light.svg", alt: "ErrSight", class: "brand-logo", height: 36 %>
+    </a>
+    <div class="nav-links">
+      <%= link_to "Docs", docs_path %>
+      <%= link_to "Integrations", integrations_path %>
+      <%= link_to "Support", support_path, class: "active" %>
+    </div>
+    <div class="nav-right">
+      <% if user_signed_in? %>
+        <%= link_to "Dashboard", authenticated_root_path, class: "btn btn-primary" %>
+      <% else %>
+        <% if public_signup_allowed? %>
+          <%= link_to "Sign in", new_user_session_path, class: "btn btn-ghost" %>
+        <% end %>
+        <%= link_to primary_cta_label, primary_cta_path, class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </div>
+</nav>
+
+<main id="main">
+<section class="legal-wrap">
+  <p class="legal-date">Self-hosted instance</p>
+  <h1 class="legal-title">Where to get <em>help</em>.</h1>
+
+  <div class="legal-stack">
+    <div>
+      <h2>Issues with this specific instance</h2>
+      <p>If something looks broken in this deployment — events not arriving, alerts not firing, can't sign in — contact whoever runs this instance. They can check the server logs, the database, the Solid Queue dashboard at <code>/jobs</code>, and the ActiveAdmin panel at <code>/admin</code>.</p>
+    </div>
+
+    <div>
+      <h2>Issues with the software itself</h2>
+      <p>ErrSight OSS is open source. File a GitHub issue at the repository you forked from, or open a pull request if you've already worked out a fix. Security issues should be reported privately to the maintainers per the upstream project's security policy.</p>
+    </div>
+
+    <div>
+      <h2>SDK / client gem help</h2>
+      <p>Each official SDK lives in its own repository — see the <%= link_to "Integrations", integrations_path, class: "legal-link" %> page for links. SDK bug reports and feature requests go in those repos.</p>
+    </div>
+  </div>
+</section>
+
+<section class="legal-wrap" style="padding-top: 0;">
+  <h2 style="font-size: clamp(32px, 6vw, 52px); letter-spacing: -0.05em; line-height: 1.05; margin: 0 0 28px;">
+    Frequently asked <em style="font-family: var(--serif); font-style: italic; color: var(--accent); font-weight: 400;">questions</em>.
+  </h2>
+
+  <div class="legal-stack" style="gap: 10px;">
+    <details style="border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; background: var(--bg-2);">
+      <summary style="cursor: pointer; font-weight: 600; color: var(--fg); font-size: 17px; letter-spacing: -0.01em;">My events are not showing up. What should I check?</summary>
+      <p style="margin: 12px 0 0; color: var(--fg-dim);">
+        Confirm the API key matches the project, the SDK is initialized before the error occurs, and the project isn't paused (admins see the toggle on the project settings page). Outbound HTTPS to <strong>this instance's host</strong> needs to be reachable from your application. If your operator has set <code>RETENTION_DAYS</code>, older events get pruned; that's expected.
+      </p>
+    </details>
+
+    <details style="border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; background: var(--bg-2);">
+      <summary style="cursor: pointer; font-weight: 600; color: var(--fg); font-size: 17px; letter-spacing: -0.01em;">How long are events retained?</summary>
+      <p style="margin: 12px 0 0; color: var(--fg-dim);">
+        Whatever the operator set <code>RETENTION_DAYS</code> to. Default is 30. <code>0</code> disables pruning entirely. The <code>PruneEventsByRetentionJob</code> runs at 4:15am every day.
+      </p>
+    </details>
+
+    <details style="border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; background: var(--bg-2);">
+      <summary style="cursor: pointer; font-weight: 600; color: var(--fg); font-size: 17px; letter-spacing: -0.01em;">How do I add teammates or transfer ownership?</summary>
+      <p style="margin: 12px 0 0; color: var(--fg-dim);">
+        Open your organization settings and use Invitations to add teammates by email. To transfer ownership, an admin can change member roles from the Members page. If the original owner is unreachable, an instance admin can intervene via the <code>/admin</code> ActiveAdmin panel.
+      </p>
+    </details>
+
+    <details style="border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; background: var(--bg-2);">
+      <summary style="cursor: pointer; font-weight: 600; color: var(--fg); font-size: 17px; letter-spacing: -0.01em;">How do I delete my data or my account?</summary>
+      <p style="margin: 12px 0 0; color: var(--fg-dim);">
+        Delete individual projects from project settings. For full account deletion or per-project data erasure, use the Data Erasure flow in-product. Deletion is permanent once the grace window closes (90 days by default — see <code>User::RETENTION_WINDOW</code>).
+      </p>
+    </details>
+
+    <details style="border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; background: var(--bg-2);">
+      <summary style="cursor: pointer; font-weight: 600; color: var(--fg); font-size: 17px; letter-spacing: -0.01em;">How do I report a security issue?</summary>
+      <p style="margin: 12px 0 0; color: var(--fg-dim);">
+        For an issue specific to this instance, contact your operator privately. For a security issue in the open-source code itself, follow the upstream project's security policy and avoid filing a public issue.
+      </p>
+    </details>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="container">
+    <div class="foot-bottom">
+      <span>© <%= Date.current.year %> Jijo Bose</span>
+      <span>
+        <%= link_to "Docs", docs_path %>
+        ·
+        <%= link_to "Privacy", privacy_path %>
+        ·
+        <%= link_to "Terms", terms_path %>
+      </span>
+    </div>
+  </div>
+</footer>

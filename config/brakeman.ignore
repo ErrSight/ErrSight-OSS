@@ -1,0 +1,22 @@
+{
+  "ignored_warnings": [
+    {
+      "fingerprint": "37dc4267373474ff6b02bd91b53bfb244950990f2622953e6e358eaf37e4200b",
+      "note": "project_id is coerced via Integer() in project_id_filter; safe to interpolate."
+    },
+    {
+      "fingerprint": "9911ccbb3bcc7bd1a8a155f2a52b6a33b703e39a965161d262d5471c6b9f25cf",
+      "note": "project_id is coerced via Integer() before interpolation; safe."
+    },
+    {
+      "fingerprint": "c3542b9d791a83f25b1c03f11044a4d021fbf5656b20d1da4c60677dc1170bf1",
+      "note": "project_id is coerced via Integer() in project_id_filter; safe to interpolate."
+    },
+    {
+      "fingerprint": "fc854311a0ccb798a270a415302de42f0f3d0b7b8f5bb7364ede5071c5008979",
+      "note": "project_id is coerced via Integer() in project_id_filter; safe to interpolate."
+    }
+  ],
+  "updated": "2026-05-06 08:00:00 +0530",
+  "brakeman_version": "8.0.4"
+}

@@ -1,0 +1,59 @@
+<%#
+  Unified Items view (replaces the old crowded Issues / Events pages).
+  Locals: mode (:issues | :events). Layout (A saved-views / B faceted rail /
+  C command bar) is driven by @items_layout (URL ?layout=a|b|c, cookie-backed).
+%>
+<% content_for :title, "#{mode == :issues ? 'Issues' : 'Events'} — #{@project.name} — ErrSight" %>
+
+<div class="es-items errsight-items"
+     data-controller="items-select"
+     data-items-select-mode-value="<%= mode %>"
+     data-items-select-bulk-url-value="<%= bulk_project_events_path(@project) %>">
+
+  <%= render "events/items/header", mode: mode %>
+
+  <% if @items_layout == "a" %>
+    <%= render "events/items/saved_views", mode: mode, variant: :tabs %>
+    <%= render "events/items/query_bar", mode: mode %>
+  <% elsif @items_layout == "c" %>
+    <div class="es-cmdbar">
+      <%= render "events/items/query_bar", mode: mode %>
+      <%= render "events/items/saved_views", mode: mode, variant: :chips %>
+    </div>
+  <% else %>
+    <%= render "events/items/query_bar", mode: mode %>
+  <% end %>
+
+  <%= render "events/items/micro_metrics" %>
+
+  <div class="es-items-body">
+    <% if @items_layout == "b" %>
+      <%= render "events/items/facet_rail", mode: mode %>
+    <% end %>
+    <div class="es-items-content">
+      <% if @items_layout == "c" %>
+        <%= render "events/items/grouped_stream", mode: mode %>
+      <% elsif mode == :issues %>
+        <%= render "events/items/issues_table" %>
+      <% else %>
+        <%= render "events/items/events_table" %>
+      <% end %>
+      <%= render "events/items/pager", mode: mode %>
+    </div>
+  </div>
+
+  <% if mode == :issues %>
+    <%= render "events/items/bulk_bar" %>
+  <% end %>
+</div>
+
+<% if mode == :issues %>
+  <%# Issue detail overlay — a row click loads issues/overlay into the Turbo
+      Frame; overlay_controller reveals the panel. (Reused from the old view.) %>
+  <div class="iss-overlay" data-controller="overlay" data-action="keydown@window->overlay#keydown">
+    <div class="iss-overlay-backdrop" data-action="click->overlay#close"></div>
+    <div class="iss-overlay-panel">
+      <%= turbo_frame_tag "issue-overlay", data: { overlay_target: "frame", action: "turbo:frame-load->overlay#opened" } %>
+    </div>
+  </div>
+<% end %>

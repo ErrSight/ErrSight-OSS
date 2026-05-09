@@ -1,0 +1,46 @@
+<%#
+  Inline AI "fix this error" prompt, rendered as a collapsible accordion in the
+  context aside (event detail) and the overlay's context column. Replaces the
+  old preview modal: the user expands the accordion to read exactly what would
+  be copied, then hits Copy. Built server-side with no user PII and no LLM call
+  (see FixPromptBuilder). Renders nothing unless `event` is warning/error/fatal.
+
+  Locals:
+    event   - the Event to build the prompt from
+    project - its project (passed through to FixPromptBuilder)
+    boxed   - optional (default false). When true the accordion is wrapped in
+              its own .panel card, for the overlay's context column. When false
+              it renders as a bare .sp-section meant to sit inside an existing
+              sidebar panel (the event detail aside).
+%>
+<% if event.present? && %w[warning error fatal].include?(event.level.to_s) %>
+  <% boxed = local_assigns.fetch(:boxed, false) %>
+  <% accordion = capture do %>
+    <details class="sp-section fix-prompt" data-controller="fix-prompt">
+      <summary class="fix-prompt-summary">
+        <span class="fix-prompt-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 3l1.8 4.2L17 9l-4.2 1.8L11 15l-1.8-4.2L5 9l4.2-1.8z"/><path d="M18 13l.9 2.1L21 16l-2.1.9L18 19l-.9-2.1L15 16l2.1-.9z"/></svg>
+          Fix prompt
+        </span>
+        <span class="fix-prompt-toggle" aria-hidden="true"></span>
+      </summary>
+
+      <div class="fix-prompt-body">
+        <p class="fix-prompt-hint">An AI-ready prompt to debug this error. No user data is included.</p>
+        <pre class="fix-prompt-text" data-fix-prompt-target="content"><%= fix_prompt_for(event, project) %></pre>
+        <div class="fix-prompt-actions">
+          <span class="fix-prompt-status" role="status" aria-live="polite" data-fix-prompt-target="status"></span>
+          <button type="button" class="btn btn-primary btn-sm"
+                  data-fix-prompt-target="copyButton"
+                  data-action="click->fix-prompt#copy">Copy to clipboard</button>
+        </div>
+      </div>
+    </details>
+  <% end %>
+
+  <% if boxed %>
+    <div class="panel fix-prompt-panel"><%= accordion %></div>
+  <% else %>
+    <%= accordion %>
+  <% end %>
+<% end %>

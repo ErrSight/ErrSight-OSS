@@ -1,0 +1,78 @@
+<% content_for :title, "#{@project.name} — Webhook endpoints" %>
+
+<div class="page-head" style="padding-bottom: 14px;">
+  <div>
+    <div class="eyebrow"><span class="dot"></span><%= @project.name %></div>
+    <h1 style="font-family: var(--sans); font-weight: 500; letter-spacing: -0.025em; font-size: 28px; line-height: 1.15; margin: 0;">Webhook <em style="font-family: var(--serif); font-style: italic; color: var(--accent); font-weight: 400;">endpoints</em></h1>
+    <div style="margin-top: 6px; font-family: var(--mono); font-size: 11.5px; color: var(--fg-dim); display:flex; gap: 14px;">
+      <span><span style="color: var(--fg);"><%= @webhook_endpoints.size %></span> endpoints</span>
+      <span><span style="color: var(--fg);"><%= @webhook_endpoints.count(&:active?) %></span> active</span>
+    </div>
+  </div>
+  <div style="display:flex; gap: 6px;">
+    <%= link_to "Alert rules", project_alert_rules_path(@project), class: "btn btn-ghost btn-sm" %>
+    <%= link_to "+ New endpoint", new_project_webhook_endpoint_path(@project), class: "btn btn-primary btn-sm" %>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-head" style="padding: 10px 14px;">
+    <span class="title">How delivery works</span>
+  </div>
+  <div style="padding: 12px 16px; font-size: 13px; color: var(--fg-dim); line-height: 1.6;">
+    Every event that would fire an alert is <code>POST</code>ed to each active endpoint. The body is JSON and carries an
+    <code>X-ErrSight-Signature</code> header (HMAC-SHA256 of <code>{timestamp}.{body}</code> with the endpoint secret).
+  </div>
+</section>
+
+<section class="panel" style="margin-top: 14px;">
+  <div class="panel-head" style="padding: 10px 14px;">
+    <span class="title">Endpoints</span>
+  </div>
+  <% if @webhook_endpoints.empty? %>
+    <div class="panel-empty">
+      <div class="t">No endpoints yet.</div>
+      <div class="d">Add one to start receiving alert deliveries.</div>
+      <%= link_to "+ New endpoint", new_project_webhook_endpoint_path(@project), class: "btn btn-primary btn-sm" %>
+    </div>
+  <% else %>
+    <div>
+      <% @webhook_endpoints.each do |endpoint| %>
+        <div style="padding: var(--row-pad) 16px; border-bottom: 1px solid var(--line); display:flex; gap: 14px; align-items: flex-start; justify-content: space-between;">
+          <div style="min-width:0; flex: 1;">
+            <div style="font-family: var(--mono); font-size: 13px; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= endpoint.url %></div>
+            <div class="t-meta" style="margin-top: 4px;">
+              <% if endpoint.active? %>
+                <span style="color: var(--ok);">active</span>
+              <% else %>
+                <span style="color: var(--fg-dim);">disabled</span>
+              <% end %>
+              <% if endpoint.last_delivered_at %>
+                · last delivered <%= time_ago_in_words(endpoint.last_delivered_at) %> ago
+              <% end %>
+              <% if endpoint.failure_count > 0 %>
+                · <span style="color: var(--err);"><%= endpoint.failure_count %> recent failures</span>
+              <% end %>
+            </div>
+            <% if policy(@project).update? %>
+              <details style="margin-top: 8px;">
+                <summary style="font-family: var(--mono); font-size: 11px; color: var(--fg-dim); cursor: pointer;">Show signing secret</summary>
+                <div class="pc-api-bar" style="margin-top: 6px; padding: 6px 10px; font-size: 11px;">
+                  <code class="v" style="color: var(--accent); letter-spacing: 0;"><%= endpoint.secret %></code>
+                </div>
+              </details>
+            <% end %>
+          </div>
+          <div style="display:flex; gap: 10px; align-items:center; flex-shrink: 0;">
+            <%= link_to "Edit", edit_project_webhook_endpoint_path(@project, endpoint), style: "font-family: var(--mono); font-size: 11.5px; color: var(--fg-dim); text-decoration: none;" %>
+            <%= button_to "Delete", project_webhook_endpoint_path(@project, endpoint),
+                  method: :delete,
+                  form: { style: "display:inline;" },
+                  style: "background: transparent; border: 0; padding: 0; font-family: var(--mono); font-size: 11.5px; color: var(--err); cursor: pointer;",
+                  data: { turbo_confirm: "Remove this endpoint?" } %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</section>

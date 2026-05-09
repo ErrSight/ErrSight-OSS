@@ -1,0 +1,127 @@
+<% content_for :title, "Account settings — ErrSight" %>
+
+<%
+  field_style = "width:100%; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 12px; font-family: var(--sans); font-size: 13.5px;"
+  memberships = current_user.memberships.includes(:organization).joins(:organization).where(organizations: { discarded_at: nil })
+  shared_orgs = current_user.shared_owned_organizations
+%>
+
+<div class="page-head" style="padding-bottom: 14px;">
+  <div>
+    <div class="eyebrow"><span class="dot"></span><%= current_user.email %></div>
+    <h1 style="font-family: var(--sans); font-weight: 500; letter-spacing: -0.025em; font-size: 28px; line-height: 1.15; margin: 0;">Account <em style="font-family: var(--serif); font-style: italic; color: var(--accent); font-weight: 400;">settings</em></h1>
+  </div>
+</div>
+
+<div style="display:grid; gap: 14px; max-width: 640px;">
+  <section class="panel">
+    <div class="panel-head" style="padding: 10px 14px;">
+      <span class="title">Profile</span>
+    </div>
+    <div style="padding: 16px;">
+      <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
+        <%= render "devise/shared/error_messages", resource: resource %>
+
+        <div style="display:grid; gap: 14px;">
+          <div>
+            <%= f.label :email, "Email", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+            <%= f.email_field :email, autofocus: true, autocomplete: "email", style: field_style %>
+          </div>
+          <div>
+            <%= f.label :password, class: "t-eyebrow", style: "display:block; margin-bottom:6px;" do %>
+              New password <span style="color: var(--fg-dimmer); text-transform: none; letter-spacing: 0;">(leave blank to keep current)</span>
+            <% end %>
+            <%= f.password_field :password, autocomplete: "new-password", style: field_style %>
+          </div>
+          <div>
+            <%= f.label :password_confirmation, "Confirm new password", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+            <%= f.password_field :password_confirmation, autocomplete: "new-password", style: field_style %>
+          </div>
+          <div>
+            <%= f.label :current_password, class: "t-eyebrow", style: "display:block; margin-bottom:6px;" do %>
+              Current password <span style="color: var(--fg-dimmer); text-transform: none; letter-spacing: 0;">(required)</span>
+            <% end %>
+            <%= f.password_field :current_password, autocomplete: "current-password", style: field_style %>
+          </div>
+        </div>
+
+        <div style="margin-top: 18px;">
+          <%= f.submit "Save changes", class: "btn btn-primary btn-sm" %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <% if memberships.any? %>
+    <section class="panel">
+      <div class="panel-head" style="padding: 10px 14px;">
+        <span class="title">Notifications</span>
+      </div>
+      <div style="padding: 14px 16px;">
+        <p style="margin: 0 0 12px; font-size: 13px; color: var(--fg-dim); line-height: 1.55;">Once a week we send a short "what broke" summary. Turn it off per org if it isn't useful.</p>
+        <div>
+          <% memberships.each do |m| %>
+            <%= form_with url: toggle_weekly_digest_path(m), method: :patch, local: true,
+                  style: "display:flex; align-items:center; justify-content:space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line);" do %>
+              <div style="min-width:0;">
+                <div style="font-size: 13.5px; font-weight: 500; color: var(--fg);"><%= m.organization.name %></div>
+                <div class="t-meta" style="margin-top: 1px;">Weekly digest email</div>
+              </div>
+              <label style="display:inline-flex; align-items:center; gap: 8px; cursor:pointer;">
+                <input type="hidden" name="weekly_digest_enabled" value="<%= m.weekly_digest_enabled? ? '0' : '1' %>">
+                <span class="t-meta"><%= m.weekly_digest_enabled? ? 'on' : 'off' %></span>
+                <button type="submit"
+                  style="position:relative; display:inline-flex; align-items:center; width: 36px; height: 20px; padding: 2px; border-radius: 999px; border: 0; cursor: pointer; transition: background 0.15s; background: <%= m.weekly_digest_enabled? ? 'var(--accent)' : 'var(--line-2)' %>;">
+                  <span style="display:inline-block; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform 0.15s; transform: <%= m.weekly_digest_enabled? ? 'translateX(16px)' : 'translateX(0)' %>;"></span>
+                </button>
+              </label>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </section>
+  <% end %>
+
+  <p style="margin: 0; font-family: var(--mono); font-size: 11px; color: var(--fg-dimmer); text-align: center;">
+    <%= link_to "Privacy policy", privacy_path, style: "color: inherit; text-decoration: underline;" %>
+    ·
+    <%= link_to "Terms", terms_path, style: "color: inherit; text-decoration: underline;" %>
+  </p>
+
+  <section class="panel" style="border-color: color-mix(in oklab, var(--err) 40%, var(--line));">
+    <div class="panel-head" style="padding: 10px 14px;">
+      <span class="title" style="color: var(--err);">Danger zone</span>
+    </div>
+    <div style="padding: 14px 16px;">
+      <% if shared_orgs.any? %>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap: 14px;">
+          <div style="min-width:0;">
+            <div style="font-size: 13.5px; font-weight: 500; color: var(--fg);">Remove team members first</div>
+            <div class="t-meta" style="margin-top: 3px; color: var(--fg-dim); text-transform: none; letter-spacing: 0;">
+              You own <strong style="color: var(--fg);"><%= shared_orgs.map(&:name).to_sentence %></strong> with other members. Remove them before deleting your account.
+            </div>
+          </div>
+          <%= link_to "Manage team", organization_memberships_path(shared_orgs.first), class: "btn btn-secondary btn-sm" %>
+        </div>
+      <% else %>
+        <div>
+          <div style="font-size: 13.5px; font-weight: 500; color: var(--fg);">Delete account</div>
+          <div class="t-meta" style="margin-top: 3px; color: var(--fg-dim); text-transform: none; letter-spacing: 0; line-height: 1.55;">
+            Hides your account and data. Retained for 90 days, then permanently purged. Recovery during that window is via support only.
+          </div>
+
+          <%= form_with url: registration_path(resource_name), method: :delete, local: true,
+                style: "margin-top: 14px;",
+                data: { turbo_confirm: "Delete your account? Data is retained for 90 days." } do %>
+            <div style="display:flex; justify-content:flex-end;">
+              <button type="submit"
+                style="background: var(--err); color: #fff; border: 0; border-radius: 8px; padding: 7px 12px; font-family: var(--sans); font-size: 12.5px; font-weight: 500; cursor: pointer;">
+                Delete account
+              </button>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+</div>

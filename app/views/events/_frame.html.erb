@@ -1,0 +1,49 @@
+<%#
+  Renders a single stack frame with optional source context body.
+
+  Locals:
+    frame      — Hash from EventFramesHelper#event_frames
+    open_idx   — index of the frame to expand by default (top in_app frame)
+
+  Implicit (from `render collection: ..., as: :frame`):
+    frame_iteration — Rails' iteration object (.index, .count)
+
+  Frames without context_line (framework frames, or all frames from
+  legacy backtrace-string events) render head-only with no body.
+%>
+<%
+  classes = [ "stack-frame", frame[:in_app] ? "frame-in-app" : "frame-ext" ]
+  classes << "open" if frame_iteration.index == open_idx
+  display_number = frame_iteration.size - frame_iteration.index
+%>
+<div class="<%= classes.join(' ') %>" data-controller="stack-frame">
+  <div class="frame-head" data-action="click->stack-frame#toggle">
+    <svg class="toggle" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 6 6 6-6 6"/></svg>
+    <div class="ff">
+      <span class="file <%= frame[:in_app] ? 'in-app' : 'ext' %>"><%= frame[:filename] %></span>
+      <% if frame[:lineno] %><span class="loc">:<%= frame[:lineno] %></span><% end %>
+      <% if frame[:function].present? %><span class="fn">in <span class="acc"><%= frame[:function] %></span></span><% end %>
+    </div>
+    <div class="right-meta">
+      <span>#<%= display_number %></span>
+    </div>
+  </div>
+
+  <% if frame[:context_line] && frame[:lineno] %>
+    <div class="frame-body">
+      <div class="code">
+        <%# pre_context lines: numbered backwards from the failing line so
+            line numbers always agree with the file on disk. %>
+        <% start_lineno = frame[:lineno] - frame[:pre_context].size %>
+        <% frame[:pre_context].each_with_index do |line, i| %>
+          <div class="ln"><span class="n"><%= start_lineno + i %></span><span class="c"><%= line %></span></div>
+        <% end %>
+        <%# The failing line itself, highlighted via .ln.hl %>
+        <div class="ln hl"><span class="n"><%= frame[:lineno] %></span><span class="c"><%= frame[:context_line] %></span></div>
+        <% frame[:post_context].each_with_index do |line, i| %>
+          <div class="ln"><span class="n"><%= frame[:lineno] + 1 + i %></span><span class="c"><%= line %></span></div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,32 @@
+<%# Pagination footer. Issues paginate in memory (@pager); Events use Pagy (@pagy). %>
+<div class="es-pager">
+  <% if mode == :issues && @pager %>
+    <% if @pager[:count].positive? %>
+      <span class="es-pager-range"><b><%= number_with_delimiter(@pager[:from]) %>–<%= number_with_delimiter(@pager[:to]) %></b> of <%= number_with_delimiter(@pager[:count]) %></span>
+    <% else %>
+      <span class="es-pager-range">0 issues</span>
+    <% end %>
+    <span class="es-pager-spacer"></span>
+    <%= form_with url: request.path, method: :get, class: "es-pager-per", data: { controller: "auto-submit" } do %>
+      <%= items_hidden_state_fields(except: :per) %>
+      <label>rows
+        <%= select_tag :per, options_for_select(@pager[:per_options], @pager[:per]), data: { action: "change->auto-submit#submit" } %>
+      </label>
+    <% end %>
+    <span class="es-pager-btns">
+      <% if @pager[:prev] %><%= link_to "‹ Prev", items_url(page: @pager[:prev]), class: "es-pager-btn" %><% else %><span class="es-pager-btn is-disabled">‹ Prev</span><% end %>
+      <% if @pager[:next] %><%= link_to "Next ›", items_url(page: @pager[:next]), class: "es-pager-btn" %><% else %><span class="es-pager-btn is-disabled">Next ›</span><% end %>
+    </span>
+  <% elsif mode == :events && @pagy %>
+    <% if @pagy.count.positive? %>
+      <span class="es-pager-range"><b><%= number_with_delimiter(@pagy.from) %>–<%= number_with_delimiter(@pagy.to) %></b> of <%= number_with_delimiter(@pagy.count) %></span>
+    <% else %>
+      <span class="es-pager-range">0 events</span>
+    <% end %>
+    <span class="es-pager-spacer"></span>
+    <span class="es-pager-btns">
+      <% if @pagy.prev %><%= link_to "‹ Prev", items_url(page: @pagy.prev), class: "es-pager-btn" %><% else %><span class="es-pager-btn is-disabled">‹ Prev</span><% end %>
+      <% if @pagy.next %><%= link_to "Next ›", items_url(page: @pagy.next), class: "es-pager-btn" %><% else %><span class="es-pager-btn is-disabled">Next ›</span><% end %>
+    </span>
+  <% end %>
+</div>

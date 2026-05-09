@@ -1,0 +1,6 @@
+web: SOLID_QUEUE_IN_PUMA=true bin/rails server
+css: bin/rails tailwindcss:watch[always]
+sass: bin/rails dartsass:watch
+# Solid Queue runs inside Puma via plugin when SOLID_QUEUE_IN_PUMA=true (see config/puma.rb).
+# If you ever need it as a separate process, unset SOLID_QUEUE_IN_PUMA and uncomment below.
+# worker: bundle exec rails solid_queue:start

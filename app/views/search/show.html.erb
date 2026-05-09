@@ -1,0 +1,136 @@
+<% content_for :title, "Search — ErrSight" %>
+
+<%
+  field_style = "width:100%; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 6px 10px; font-family: var(--mono); font-size: 12px;"
+  select_style = "width:100%; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 6px 10px; font-family: var(--sans); font-size: 12.5px;"
+  has_filters = params.permit(:q, :level, :environment, :release, :tag_key, :tag_value, :project_id, :resolved, :range).values.any?(&:present?)
+%>
+
+<div class="page-head" style="padding-bottom: 14px;">
+  <div>
+    <div class="eyebrow"><span class="dot"></span>Cross-project</div>
+    <h1 style="font-family: var(--sans); font-weight: 500; letter-spacing: -0.025em; font-size: 28px; line-height: 1.15; margin: 0;"><em style="font-family: var(--serif); font-style: italic; color: var(--accent); font-weight: 400;">Search</em></h1>
+    <p style="margin: 6px 0 0; font-size: 13.5px; color: var(--fg-dim);">Query events across every project you can access.</p>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-head" style="padding: 10px 14px;">
+    <span class="title">Filters</span>
+  </div>
+  <div style="padding: 14px 16px;">
+    <%= form_with url: search_path, method: :get, data: { turbo: false } do |f| %>
+      <div style="display:flex; gap: 8px; margin-bottom: 14px;">
+        <%= f.text_field :q, value: params[:q],
+              placeholder: "Search message text…",
+              style: "flex:1; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 12px; font-family: var(--sans); font-size: 13.5px;" %>
+        <%= f.submit "Search", class: "btn btn-primary btn-sm" %>
+      </div>
+
+      <div class="search-filter-grid">
+        <div>
+          <label class="t-eyebrow" style="display:block; margin-bottom:4px;">Project</label>
+          <%= f.select :project_id,
+                [["All", ""]] + @accessible_projects.map { |p| [p.name, p.id] },
+                { selected: params[:project_id] }, style: select_style %>
+        </div>
+        <div>
+          <label class="t-eyebrow" style="display:block; margin-bottom:4px;">Level</label>
+          <%= f.select :level,
+                [["Any", ""]] + Event.levels.keys.map { |l| [l.capitalize, l] },
+                { selected: params[:level] }, style: select_style %>
+        </div>
+        <div>
+          <label class="t-eyebrow" style="display:block; margin-bottom:4px;">Environment</label>
+          <%= f.text_field :environment, value: params[:environment], placeholder: "production", style: field_style %>
+        </div>
+        <div>
+          <label class="t-eyebrow" style="display:block; margin-bottom:4px;">Range</label>
+          <%= f.select :range,
+                [["Any", ""], ["24h", "24h"], ["7d", "7d"], ["30d", "30d"], ["90d", "90d"]],
+                { selected: params[:range] }, style: select_style %>
+        </div>
+        <div>
+          <label class="t-eyebrow" style="display:block; margin-bottom:4px;">Release</label>
+          <%= f.select :release,
+                [["Any", ""]] + @releases.map { |r| [r, r] },
+                { selected: params[:release] }, style: select_style %>
+        </div>
+        <div>
+          <label class="t-eyebrow" style="display:block; margin-bottom:4px;">Tag key</label>
+          <%= f.text_field :tag_key, value: params[:tag_key], placeholder: "e.g. component", style: field_style %>
+        </div>
+        <div>
+          <label class="t-eyebrow" style="display:block; margin-bottom:4px;">Tag value</label>
+          <%= f.text_field :tag_value, value: params[:tag_value], placeholder: "e.g. billing", style: field_style %>
+        </div>
+        <div>
+          <label class="t-eyebrow" style="display:block; margin-bottom:4px;">Status</label>
+          <%= f.select :resolved,
+                [["Any", ""], ["Unresolved", "false"], ["Resolved", "true"]],
+                { selected: params[:resolved] }, style: select_style %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<div style="display:flex; flex-wrap:wrap; gap: 10px; margin-top: 12px; align-items: flex-start;">
+  <% if has_filters %>
+    <%= form_with url: saved_filters_path, method: :post,
+          style: "display:flex; gap: 6px; align-items: flex-end; padding: 8px 10px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px;",
+          data: { turbo: false } do |f| %>
+      <div>
+        <label class="t-eyebrow" style="display:block; margin-bottom:4px;">Save as</label>
+        <%= f.text_field :name, placeholder: "e.g. Prod errors 24h",
+              required: true, maxlength: 80,
+              style: "background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 6px; padding: 5px 10px; font-family: var(--sans); font-size: 12.5px;" %>
+      </div>
+      <% SavedFilter::ALLOWED_KEYS.each do |k| %>
+        <%= hidden_field_tag "filters[#{k}]", params[k] if params[k].present? %>
+      <% end %>
+      <%= f.submit "Save", class: "btn btn-secondary btn-sm" %>
+    <% end %>
+  <% end %>
+
+  <% if @saved_filters.any? %>
+    <div style="padding: 8px 10px; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px;">
+      <div class="t-eyebrow" style="margin-bottom: 6px;">Saved filters</div>
+      <div style="display:flex; flex-wrap: wrap; gap: 6px;">
+        <% @saved_filters.each do |sf| %>
+          <span style="display:inline-flex; align-items:center; gap: 4px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 999px; padding: 2px 4px 2px 10px;">
+            <%= link_to sf.name, search_path(sf.to_params), style: "font-family: var(--mono); font-size: 11.5px; color: var(--accent); text-decoration: none;" %>
+            <%= button_to saved_filter_path(sf), method: :delete,
+                  form: { style: "display:inline;" },
+                  style: "background:transparent; border:0; padding: 0 6px; font-family: var(--mono); font-size: 13px; color: var(--fg-dim); cursor: pointer;",
+                  data: { turbo_confirm: "Remove saved filter?" } do %>
+              ×
+            <% end %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<section class="panel" style="margin-top: 14px;">
+  <div class="panel-head" style="padding: 10px 14px;">
+    <span class="title">Results</span>
+    <span class="right"><%= @pagy.count %> matching event<%= @pagy.count == 1 ? "" : "s" %></span>
+  </div>
+  <% if @events.empty? %>
+    <div class="panel-empty">
+      <div class="t">No events match.</div>
+      <div class="d">Try a broader query or clear some filters.</div>
+    </div>
+  <% else %>
+    <div>
+      <% @events.each do |event| %>
+        <%= render "events/event_row", event: event, show_project: true %>
+      <% end %>
+    </div>
+    <div style="padding: 8px 14px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--fg-dim);">
+      <%== pagy_nav(@pagy) %>
+    </div>
+  <% end %>
+</section>

@@ -1,0 +1,16 @@
+<%# Dense, single-line raw Events table. %>
+<div class="es-tablewrap es-etable">
+  <div class="es-erow es-ehead" role="row">
+    <span class="es-th es-th-static">LEVEL</span>
+    <span class="es-th es-th-static">TIME</span>
+    <span class="es-th es-th-static">MESSAGE</span>
+    <span class="es-th es-th-static">USER</span>
+    <span class="es-th es-th-static">RELEASE · ENV</span>
+  </div>
+
+  <% if @events.blank? %>
+    <%= render "events/items/empty", mode: :events %>
+  <% else %>
+    <% @events.each do |event| %><%= render "events/items/event_row", event: event %><% end %>
+  <% end %>
+</div>

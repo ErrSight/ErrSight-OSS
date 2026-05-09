@@ -1,0 +1,9 @@
+# Marker for the last upstream commit whose non-proprietary changes were
+# ported into this OSS build. Used as the base for `git log
+# <sha>..HEAD` on the upstream repo to enumerate what's new next time.
+#
+# Update this file each time a port lands.
+
+upstream_sha:  e3ab20ec9b04edf80214f0fee7e64d50b1ff02d7
+upstream_date: 2026-05-15
+ported_at:     2026-05-24

@@ -1,0 +1,15 @@
+[ErrSight Admin] New signup
+
+A new user just registered.
+
+Email:         <%= @user.email %>
+Name:          <%= @user.name.presence || "(not provided)" %>
+Signup method: <%= @signup_method %>
+Signed up at:  <%= @signup_time.strftime("%B %-d, %Y at %H:%M UTC") %>
+
+<% if @admin_url %>
+Open in admin: <%= @admin_url %>
+<% end %>
+
+--
+Sent to <%= AdminNotificationMailer.recipient %> because ADMIN_SIGNUP_NOTIFICATIONS is set to per_signup.

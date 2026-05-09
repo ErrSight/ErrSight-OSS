@@ -1,0 +1,404 @@
+<% content_for :title, "Event #{@event.id} — #{@project.name} — ErrSight" %>
+
+<%
+  org       = @project.organization
+  org_slug  = org&.slug || "workspace"
+  proj_slug = @project.slug.presence || @project.id
+  lvl       = @event.level.to_s
+  fp_short  = @event.fingerprint.to_s[0, 8]
+  fp_full   = @event.fingerprint.to_s
+
+  # event_frames returns structured frames from the SDK (with source
+  # context for in_app frames) when available, falling back to a parsed
+  # backtrace string for legacy events. Either way the partial below
+  # consumes the same shape.
+  frames        = event_frames(@event)
+  first_bt      = event_first_frame_label(@event, frames)
+  in_app_count  = frames.count { |f| f[:in_app] }
+  full_count    = frames.size
+  # Auto-expand the topmost in_app frame — the actionable line for the
+  # debugging eye. Falls back to first frame if all are framework.
+  open_frame_idx = frames.index { |f| f[:in_app] } || 0
+
+  breadcrumbs = Array(@event.breadcrumbs)
+  tags        = @event.tags.is_a?(Hash) ? @event.tags : {}
+  user_ctx    = @event.user_context.is_a?(Hash) ? @event.user_context : {}
+  metadata    = @event.metadata.is_a?(Hash) ? @event.metadata : {}
+
+  user_display = user_ctx["email"].presence || user_ctx["username"].presence || @event.user_identifier.presence
+  user_avatar_char = (user_display.to_s[0].presence || "?").upcase
+
+  regression_text = @event.is_regression? ? "Yes" : "No"
+
+  page_no = 1
+%>
+
+<!-- breadcrumb -->
+<div class="crumb">
+  <span class="dim">~</span>
+  <span>/</span>
+  <span class="k"><%= org_slug %></span>
+  <span>/</span>
+  <%= link_to proj_slug, project_path(@project), class: "k" %>
+  <span>/</span>
+  <%= link_to "events", project_events_path(@project), class: "k" %>
+  <span>/</span>
+  <span class="kk" style="color: var(--fg);"><%= fp_short %> · <%= @event.message.to_s.split(/[:.\n]/).first.to_s.strip.truncate(48) %></span>
+  <span class="caret"></span>
+</div>
+
+<!-- event header -->
+<div class="ev-head">
+  <div>
+    <div class="sev-stripe <%= lvl %>">
+      <span class="bar"></span>
+      <span id="event-status-badge"><%= lvl.upcase %> · <%= @event.resolved? ? "resolved" : "unhandled" %></span>
+      <% if fp_full.present? %>
+        <span class="hash">fingerprint <%= fp_full %> · event_id evt_<%= @event.id %></span>
+      <% end %>
+    </div>
+    <h1>
+      <% title = @event.message.to_s.strip %>
+      <% if title.include?(":") %>
+        <% head, rest = title.split(":", 2) %>
+        <b><%= head %></b><span class="in">:</span><%= " " %><span class="sub"><%= rest.strip %></span>
+      <% else %>
+        <b><%= title %></b>
+      <% end %>
+    </h1>
+    <% causes = event_causes(@event) %>
+    <% if causes.any? %>
+      <div class="cause-chain">
+        <% causes.each do |c| %>
+          <div class="cause-item">
+            <span class="cause-arrow">↳</span>
+            <span class="cause-rescued">rescued from</span>
+            <span class="cause-class"><%= c["class"] %></span><% if c["message"].to_s.strip != "" %><span class="cause-colon">:</span> <span class="cause-msg"><%= c["message"].to_s.truncate(200) %></span><% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+    <% if first_bt.present? %>
+      <div class="snippet">
+        <span style="color: var(--fg-dimmer)">#=&gt;</span>&nbsp;raised in <code><%= first_bt %></code>
+      </div>
+    <% end %>
+    <div class="meta-row">
+      <span>occurred <span class="k"><%= time_ago_in_words(@event.occurred_at) %> ago</span></span>
+      <span class="dot"></span>
+      <span>at <span class="k"><%= @event.occurred_at.strftime("%H:%M:%S %Z") %></span></span>
+      <% if @event.release.present? %>
+        <span class="dot"></span>
+        <span>release <span class="k"><%= @event.release %></span></span>
+      <% end %>
+      <% if @event.environment.present? %>
+        <span class="dot"></span>
+        <span>env <span class="k"><%= @event.environment %></span></span>
+      <% end %>
+      <span class="dot"></span>
+      <span>project <span class="k"><%= @project.name %></span></span>
+      <% if @event.is_regression? %>
+        <span class="dot"></span>
+        <span style="color: var(--err);">regression</span>
+      <% end %>
+    </div>
+  </div>
+  <div class="ev-actions">
+    <div class="btn-row">
+      <%= link_to project_issue_path(@project, fp_full), class: "btn btn-secondary" do %>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4m0 4h.01M9 3h6l6 6v6l-6 6H9l-6-6V9z"/></svg>
+        Issue page
+      <% end %>
+      <% if %w[error fatal].include?(lvl) %>
+        <div id="event-resolve-action" style="display: contents;">
+          <% if @event.resolved? %>
+            <%= button_to unresolve_project_event_path(@project, @event), method: :patch, form: { class: "contents" }, class: "btn btn-secondary" do %>
+              ↺ Reopen
+            <% end %>
+          <% else %>
+            <%= button_to resolve_project_event_path(@project, @event), method: :patch, form: { class: "contents" }, class: "btn btn-primary" do %>
+              ✓ Resolve
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+      <% if fp_full.present? && policy(@project).mute_events? %>
+        <% if @muted %>
+          <%= button_to unmute_group_project_events_path(@project, fingerprint: fp_full),
+                method: :delete,
+                form: { class: "contents" },
+                class: "btn btn-secondary",
+                title: "Unmute this issue" do %>
+            ⊘ Unmute
+          <% end %>
+        <% else %>
+          <%= button_to mute_group_project_events_path(@project, fingerprint: fp_full),
+                method: :post,
+                form: { class: "contents" },
+                class: "btn btn-secondary",
+                title: "Mute this issue — new events will not trigger alerts" do %>
+            ⊘ Mute
+          <% end %>
+        <% end %>
+      <% end %>
+      <button type="button" class="btn-icon" title="Copy link"
+              data-controller="copy-url"
+              data-copy-url-value="<%= request.url %>"
+              data-action="click->copy-url#copy">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07l-1.5 1.5"/>
+          <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07l1.5-1.5"/>
+        </svg>
+      </button>
+    </div>
+    <% if user_display %>
+      <div class="assign-card">
+        <div class="av"><%= user_avatar_char %></div>
+        <div>user · <span class="who"><%= user_display %></span></div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- stat strip -->
+<div class="stat-strip cells">
+  <div class="stat-cell">
+    <div class="k">Events · fingerprint</div>
+    <div class="v"><%= number_with_delimiter(@similar_events_total) %></div>
+    <div class="d">lifetime for this error</div>
+  </div>
+  <div class="stat-cell">
+    <div class="k">User context</div>
+    <div class="v"><%= user_display.present? ? "known" : "—" %></div>
+    <div class="d"><%= @event.user_identifier.presence || "no user id" %></div>
+  </div>
+  <div class="stat-cell">
+    <div class="k">Regression</div>
+    <div class="v" style="<%= 'color: var(--err);' if @event.is_regression? %>"><%= regression_text %></div>
+    <div class="d"><%= @event.is_regression? ? "reopened after resolve" : "first or ongoing" %></div>
+  </div>
+  <div class="stat-cell">
+    <div class="k">Release</div>
+    <div class="v" style="font-family: var(--mono); font-size: 14px; font-weight: 500;"><%= @event.release.presence || "—" %></div>
+    <div class="d"><%= @event.environment.presence || "no env" %></div>
+  </div>
+  <div class="stat-cell">
+    <div class="k">Occurred</div>
+    <div class="v" style="font-family: var(--mono); font-size: 14px; font-weight: 500;"><%= @event.occurred_at.strftime("%H:%M:%S") %></div>
+    <div class="d"><%= @event.occurred_at.strftime("%Y-%m-%d") %></div>
+  </div>
+</div>
+
+<!-- main grid -->
+<div class="ev-grid">
+  <div>
+    <!-- stack + tabs panel -->
+    <div class="panel" data-controller="ev-tabs" style="padding: 0;">
+      <div class="tabs">
+        <button type="button" class="tab active" data-tab="stack" data-action="click->ev-tabs#show">Stack trace</button>
+        <% if breadcrumbs.any? %>
+          <button type="button" class="tab" data-tab="breadcrumbs" data-action="click->ev-tabs#show">Breadcrumbs <span class="cnt"><%= breadcrumbs.size %></span></button>
+        <% end %>
+        <% if tags.any? %>
+          <button type="button" class="tab" data-tab="tags" data-action="click->ev-tabs#show">Tags <span class="cnt"><%= tags.size %></span></button>
+        <% end %>
+        <% if metadata.any? %>
+          <button type="button" class="tab" data-tab="environment" data-action="click->ev-tabs#show">Environment</button>
+        <% end %>
+        <% if user_ctx.any? %>
+          <button type="button" class="tab" data-tab="request" data-action="click->ev-tabs#show">Request</button>
+        <% end %>
+        <button type="button" class="tab" data-tab="raw" data-action="click->ev-tabs#show">Raw</button>
+      </div>
+
+      <!-- Stack pane -->
+      <div data-ev-tab-pane="stack">
+        <% if frames.any? %>
+          <div class="panel-head">
+            <div class="title">▸ STACK · <%= pluralize(full_count, 'frame') %> · most recent call last</div>
+            <div class="right" data-controller="stack-filter">
+              <a href="#" data-stack-mode="inapp" data-action="click->stack-filter#set">in-app only<% if in_app_count.positive? %> · <%= in_app_count %><% end %></a>
+              <a href="#" class="active" data-stack-mode="full" data-action="click->stack-filter#set">full trace · <%= full_count %></a>
+            </div>
+          </div>
+          <div data-stack-filter-target="list">
+            <%= render partial: "frame", collection: frames, as: :frame, locals: { open_idx: open_frame_idx } %>
+          </div>
+        <% else %>
+          <div style="padding: 40px 18px; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--fg-dim);">
+            No backtrace captured for this event.
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Breadcrumbs pane -->
+      <% if breadcrumbs.any? %>
+        <div data-ev-tab-pane="breadcrumbs" hidden>
+          <div class="panel-head">
+            <div class="title">◆ BREADCRUMBS · <%= pluralize(breadcrumbs.size, 'entry') %></div>
+          </div>
+          <% breadcrumbs.each do |c| %>
+            <% data = c["data"].is_a?(Hash) ? c["data"] : {} %>
+            <% if c["category"].to_s == "db" && data["sql"].to_s.length.positive? %>
+              <%# DB breadcrumb: replace category cell with the query name
+                  (e.g. "User Load") and render highlighted SQL. The status
+                  cell becomes the duration, color-coded by slowness. %>
+              <div class="bc-item bc-db">
+                <span class="t"><%= c["timestamp"] %></span>
+                <span class="cat db" title="<%= data["name"] || "SQL" %>"><%= (data["name"] || "SQL").to_s.truncate(14) %></span>
+                <span class="msg sql-msg"><%= highlight_sql(data["sql"]) %></span>
+                <span class="status <%= sql_duration_class(data["duration_ms"]) %>"><%= data["duration_ms"] %>ms</span>
+              </div>
+            <% else %>
+              <div class="bc-item">
+                <span class="t"><%= c["timestamp"] %></span>
+                <span class="cat <%= c["category"].to_s.downcase %>"><%= c["category"] %></span>
+                <span class="msg"><%= c["message"] %></span>
+                <span class="status">
+                  <% if data["status"] %><%= data["status"] %><% end %>
+                </span>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <!-- Tags pane -->
+      <% if tags.any? %>
+        <div data-ev-tab-pane="tags" hidden>
+          <div class="panel-head">
+            <div class="title"># TAGS · <%= tags.size %></div>
+          </div>
+          <div style="padding: 16px 18px;" class="tag-row">
+            <% tags.each do |k, v| %>
+              <%= link_to project_events_path(@project, tag_key: k, tag_value: v), class: "tag" do %>
+                <%= k %> <b><%= v %></b>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Environment pane -->
+      <% if metadata.any? %>
+        <div data-ev-tab-pane="environment" hidden>
+          <div class="panel-head">
+            <div class="title">▤ ENVIRONMENT · metadata</div>
+          </div>
+          <div style="padding: 16px 18px;" class="kv">
+            <% metadata.each do |k, v| %>
+              <span class="k"><%= k %></span>
+              <span class="v"><%= v.is_a?(Hash) || v.is_a?(Array) ? JSON.pretty_generate(v) : v.to_s %></span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Request pane -->
+      <% if user_ctx.any? %>
+        <div data-ev-tab-pane="request" hidden>
+          <div class="panel-head">
+            <div class="title">◉ REQUEST · user context</div>
+          </div>
+          <div style="padding: 16px 18px;" class="kv">
+            <% user_ctx.each do |k, v| %>
+              <span class="k"><%= k %></span>
+              <span class="v"><%= v.is_a?(Hash) || v.is_a?(Array) ? JSON.pretty_generate(v) : v.to_s %></span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Raw pane -->
+      <div data-ev-tab-pane="raw" hidden>
+        <div class="panel-head">
+          <div class="title">{} RAW · backtrace</div>
+        </div>
+        <pre class="raw-pre"><% if @event.backtrace.present? %><span class="bt-head"><%= @event.message %></span>
+
+<%= @event.backtrace %><% else %>No backtrace recorded.<% end %></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- sidebar -->
+  <aside>
+    <div class="panel">
+      <% if user_display.present? || user_ctx.any? %>
+        <div class="sp-section">
+          <h4><span>◉ USER</span></h4>
+          <div class="user-card">
+            <div class="av"><%= user_avatar_char %></div>
+            <div>
+              <div class="email"><%= user_display.presence || "unknown user" %></div>
+              <div class="id">
+                <% if @event.user_identifier.present? %>
+                  user_identifier · <%= @event.user_identifier %>
+                <% else %>
+                  no user_identifier
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <%= render "shared/fix_prompt", event: @event, project: @project %>
+
+      <% if user_ctx.any? %>
+        <div class="sp-section">
+          <h4>▤ USER CONTEXT <span class="sub">· user_context jsonb</span></h4>
+          <div class="kv">
+            <% user_ctx.each do |k, v| %>
+              <span class="k"><%= k %></span>
+              <span class="v"><%= v.is_a?(Hash) || v.is_a?(Array) ? v.to_json : v.to_s %></span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <% if tags.any? %>
+        <div class="sp-section">
+          <h4># TAGS <span class="sub">· tags jsonb</span></h4>
+          <div class="tag-row">
+            <% tags.each do |k, v| %>
+              <%= link_to project_events_path(@project, tag_key: k, tag_value: v), class: "tag" do %>
+                <%= k %> <b><%= v %></b>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @similar_events.any? %>
+        <div class="sp-section">
+          <h4><span>⌬ SIMILAR EVENTS</span>
+            <%= link_to "all →", project_events_path(@project, fingerprint: fp_full) %>
+          </h4>
+          <div>
+            <% @similar_events.each do |evt| %>
+              <%= link_to project_event_path(@project, evt), class: "related-row" do %>
+                <div class="sig <%= evt.level %>"></div>
+                <div class="lbl"><%= evt.message.to_s.truncate(60) %></div>
+                <div class="meta"><%= time_ago_in_words(evt.occurred_at) %> ago</div>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="sp-section">
+        <h4>⌯ STATUS</h4>
+        <div style="font-family: var(--mono); font-size: 11.5px; color: var(--fg-dim); line-height: 1.7;">
+          <div>level <span style="color: var(--fg);"><%= lvl %></span></div>
+          <div id="event-sidebar-status">status <span style="color: var(--fg);"><%= @event.resolved? ? "resolved" : "unresolved" %></span></div>
+          <% if @event.is_regression? %>
+            <div>regression <span style="color: var(--err);">yes</span></div>
+          <% end %>
+          <div>captured <span style="color: var(--fg);"><%= time_ago_in_words(@event.created_at) %> ago</span></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
