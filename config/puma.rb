@@ -25,8 +25,24 @@
 # Any libraries that use a connection pool or another resource pool should
 # be configured to provide at least as many connections as the number of
 # threads. This includes Active Record's `pool` parameter in `database.yml`.
-threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)
+threads_count = ENV.fetch("RAILS_MAX_THREADS", 5).to_i
 threads threads_count, threads_count
+
+# Run Puma in cluster mode so each vCPU can do real work — single-mode
+# Puma only executes one Ruby thread at a time per process due to the GVL, so
+# without workers the host's CPUs sit idle. Set WEB_CONCURRENCY in your env.
+workers ENV.fetch("WEB_CONCURRENCY", 2).to_i
+
+# Preload the app in the master so workers fork from a warm process and share
+# memory pages via copy-on-write. Required for the before_fork hook below.
+preload_app!
+
+# Drop and re-establish DB connections around fork — child processes must not
+# share parent socket FDs, and Solid Queue's queue/cable connections need to
+# come up fresh in each worker.
+before_fork do
+  ActiveRecord::Base.connection_handler.clear_all_connections! if defined?(ActiveRecord)
+end
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 port ENV.fetch("PORT", 3000)

@@ -1,0 +1,33 @@
+# Local Postgres for development. The image is TimescaleDB by default —
+# fully Postgres-compatible, with the timescaledb extension available if you
+# choose to convert the events table to a hypertable later. Swap to plain
+# `postgres:17` if you don't want Timescale at all. The schema in
+# db/schema.rb works on either.
+
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg17
+    container_name: errsight-community-postgres
+    restart: unless-stopped
+    # 5433 on the host (the standard Postgres port stays free for any locally-
+    # installed Postgres.app or apt postgresql). Container still listens on
+    # the default 5432 internally.
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-errsight_community_development}
+      # PGDATA lives in a subdirectory of the mount so an ext4 `lost+found`
+      # entry doesn't block initdb on managed disk volumes.
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

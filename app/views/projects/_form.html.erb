@@ -1,0 +1,54 @@
+<%
+  field_style = "width:100%; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 12px; font-family: var(--sans); font-size: 13.5px;"
+%>
+<%= form_with model: project do |f| %>
+  <% if project.errors.any? %>
+    <div style="border: 1px solid color-mix(in oklab, var(--err) 30%, transparent); background: color-mix(in oklab, var(--err) 10%, transparent); color: var(--err); border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px;">
+      <p style="margin:0 0 6px; font-weight: 500;"><%= pluralize(project.errors.count, "error") %>:</p>
+      <ul style="margin:0; padding-left: 18px;">
+        <% project.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div style="display:grid; gap:14px;">
+    <% if project.new_record? %>
+      <% user_orgs = current_user.organizations.kept.order(:name) %>
+      <% selected_org_id = (project.organization_id || params[:organization_id] || user_orgs.first&.id).to_i %>
+      <% if user_orgs.size > 1 %>
+        <div>
+          <%= f.label :organization_id, "Organization", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+          <%= f.select :organization_id,
+                user_orgs.map { |o| [o.name, o.id] },
+                { selected: selected_org_id },
+                style: field_style %>
+          <p style="margin: 6px 0 0; font-size: 11.5px; color: var(--fg-dim); font-family: var(--mono);">The project will be created in this organization.</p>
+        </div>
+      <% elsif user_orgs.any? %>
+        <%= f.hidden_field :organization_id, value: user_orgs.first.id %>
+      <% end %>
+    <% end %>
+
+    <div>
+      <%= f.label :name, "Project name", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+      <%= f.text_field :name, style: field_style, placeholder: "e.g. My Rails app" %>
+    </div>
+
+    <% unless project.new_record? %>
+      <div>
+        <%= f.label :rate_limit_per_minute, "Rate limit (events / minute)", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+        <%= f.number_field :rate_limit_per_minute, min: 0, step: 1, style: field_style %>
+        <p style="margin: 6px 0 0; font-size: 11.5px; color: var(--fg-dim); font-family: var(--mono);">
+          Max events accepted per minute. Set to <code>0</code> to disable rate limiting.
+        </p>
+      </div>
+    <% end %>
+  </div>
+
+  <div style="display:flex; gap:10px; margin-top: 18px;">
+    <%= f.submit(project.new_record? ? "Create project" : "Save changes", class: "btn btn-primary btn-sm") %>
+    <%= link_to "Cancel", (project.new_record? ? projects_path : project_path(project)), class: "btn btn-ghost btn-sm" %>
+  </div>
+<% end %>

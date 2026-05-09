@@ -1,10 +1,20 @@
 default: &default
   store_options:
-    # Cap age of oldest cache entry to fulfill retention policies
-    # max_age: <%= 60.days.to_i %>
+    # Cap the cache table at ~256MB. Solid Cache trims the oldest entries
+    # in the background when this is exceeded. Bump only when alert/dedup
+    # cardinality justifies it — alert debounces and cleanup-gate keys
+    # are tiny and rotate quickly.
     max_size: <%= 256.megabytes %>
+    # Per-env namespace so a stray dev/test write can't collide with a
+    # production key if we ever point them at the same database.
     namespace: <%= Rails.env %>
 
+# Solid Cache uses the primary database connection by default (no
+# `database:` key). We deliberately do NOT add a separate `cache:`
+# connection in database.yml — the cache table lives in the primary
+# database alongside everything else, and a dedicated pool would just
+# burn Postgres connection slots for negligible benefit at
+# this scale. Revisit if cache traffic ever rivals web traffic.
 development:
   <<: *default
 
@@ -12,5 +22,4 @@ test:
   <<: *default
 
 production:
-  database: cache
   <<: *default

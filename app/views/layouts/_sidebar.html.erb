@@ -1,0 +1,223 @@
+<%
+  orgs = current_user.organizations.kept.to_a
+  # Pre-fetch sidebar data in a few queries instead of N × orgs queries: the
+  # current user's membership row per org (for role checks), the member count
+  # per org (for the "Team members" badge), and the accessible-project count
+  # per org (for the org-switcher popover meta).
+  org_ids                = orgs.map(&:id)
+  memberships_by_org_id  = current_user.memberships.where(organization_id: org_ids).index_by(&:organization_id)
+  member_counts_by_org_id = Membership.where(organization_id: org_ids).group(:organization_id).count
+  project_counts_by_org_id = current_user.accessible_projects.where(organization_id: org_ids).group(:organization_id).count
+  # 2-char org initials for the switcher avatar: word initials, else first two letters.
+  org_initials = ->(name) {
+    parts = name.to_s.split
+    (parts.size >= 2 ? parts.first(2).map { |w| w[0] } : [ name.to_s[0], name.to_s[1] ]).join.upcase.presence || "?"
+  }
+  # Prefer the URL-bound org (set by the page's controller); otherwise the
+  # session-scoped `current_organization` chosen via the sidebar switcher.
+  # Only a *persisted* @organization counts — pages like organizations#new (and
+  # a failed #create) set @organization to an unsaved record whose id is nil,
+  # which would break the org-scoped switcher links.
+  primary_org = (@organization if @organization&.persisted?) || current_organization
+  primary_membership = primary_org&.membership_for(current_user)
+  current_path = request.path
+  display_name = current_user.name.presence || current_user.email
+  avatar_letter = (current_user.name.presence || current_user.email).to_s[0].to_s.upcase
+
+  current_project_id = (defined?(@project) && @project&.persisted?) ? @project.id : nil
+  # Sidebar projects list mirrors the active org so switching the picker
+  # genuinely narrows the workspace. Falls back to every accessible project
+  # only if there's no active org (e.g. user with no memberships).
+  accessible_projects = current_user.accessible_projects.order(created_at: :desc)
+  accessible_projects = accessible_projects.where(organization_id: primary_org.id) if primary_org
+  accessible_projects = accessible_projects.to_a
+%>
+<aside class="sidebar">
+  <%= link_to dashboard_path, class: "sb-brand" do %>
+    <%= image_tag "errsight-mark-onlight.svg", alt: "ErrSight", class: "mk" %>
+    <span class="wm">Err<em>Sight</em></span>
+  <% end %>
+
+  <%# Organization switcher — current org + popover with all orgs and account actions %>
+  <% if primary_org %>
+    <div class="sb-orgswitch" data-controller="dropdown">
+      <button type="button" class="sb-orgswitch-trigger" data-action="click->dropdown#toggle" aria-haspopup="true" aria-label="Switch organization">
+        <span class="sb-org-av"><%= org_initials.(primary_org.name) %></span>
+        <span class="sb-orgswitch-name"><%= primary_org.name %></span>
+        <span class="sb-orgswitch-caret">⌄</span>
+      </button>
+      <div class="sb-popover sb-org-popover hidden" data-dropdown-target="menu">
+        <div class="sb-popover-label">Signed in as</div>
+        <div class="sb-popover-user">
+          <span class="av sb-av-sm"><%= avatar_letter %></span>
+          <span class="sb-popover-utext">
+            <span class="sb-popover-user-name"><%= display_name %></span>
+            <span class="sb-popover-user-email"><%= current_user.email %></span>
+          </span>
+        </div>
+        <div class="sb-popover-sep"></div>
+        <div class="sb-popover-label">Organizations <span class="sb-popover-count"><%= orgs.size %></span></div>
+        <div class="sb-popover-list">
+          <% orgs.each do |org| %>
+            <% m = memberships_by_org_id[org.id] %>
+            <% is_current = org.id == primary_org.id %>
+            <%= button_to activate_organization_path(org),
+                  method: :post, form: { class: "contents" },
+                  class: "sb-popover-row#{' is-current' if is_current}" do %>
+              <span class="sb-org-av"><%= org_initials.(org.name) %></span>
+              <span class="sb-popover-row-body">
+                <span class="sb-popover-row-name"><%= org.name %></span>
+                <span class="sb-popover-row-meta">
+                  <span><%= pluralize(member_counts_by_org_id[org.id] || 0, "member") %></span>
+                  <span class="sb-popover-sep-inline">·</span>
+                  <span><%= pluralize(project_counts_by_org_id[org.id] || 0, "project") %></span>
+                </span>
+              </span>
+              <% if m&.role.present? %><span class="sb-popover-row-role"><%= m.role %></span><% end %>
+              <% if is_current %><span class="sb-popover-row-check">✓</span><% end %>
+            <% end %>
+          <% end %>
+        </div>
+        <div class="sb-popover-sep"></div>
+        <%= link_to new_organization_path, class: "sb-popover-action" do %><span class="sb-popover-glyph">+</span>Create organization<% end %>
+        <div class="sb-popover-sep"></div>
+        <% if current_user.admin? %>
+          <%= link_to "Admin", admin_root_path, class: "sb-popover-action" %>
+        <% end %>
+        <%= link_to "Account settings", edit_user_registration_path, class: "sb-popover-action" %>
+        <%= button_to "Sign out", destroy_user_session_path,
+              method: :delete, form: { class: "contents" },
+              class: "sb-popover-action sb-popover-action-danger" %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Project switcher — current project + popover scoped to the active org %>
+  <% if current_project_id %>
+    <div class="sb-project-switch" data-controller="dropdown">
+      <button type="button" class="sb-projswitch-trigger" data-action="click->dropdown#toggle" aria-haspopup="true" aria-label="Switch project">
+        <span class="dot" style="background: <%= @project.ingestion_paused? ? 'var(--err)' : 'var(--ok)' %>;"></span>
+        <span class="name"><%= @project.name %></span>
+        <% if (env = params[:environment].presence) %><span class="env"><%= env %></span><% end %>
+        <span class="caret">⌄</span>
+      </button>
+      <div class="sb-popover sb-proj-popover hidden" data-dropdown-target="menu">
+        <div class="sb-popover-label"><%= primary_org&.name || "Projects" %> <span class="sb-popover-count"><%= accessible_projects.size %></span></div>
+        <div class="sb-popover-list">
+          <% accessible_projects.each do |proj| %>
+            <%= link_to project_path(proj), class: "sb-popover-row sb-popover-row-compact#{' is-current' if proj.id == current_project_id}" do %>
+              <span class="dot" style="background: <%= proj.ingestion_paused? ? 'var(--err)' : 'var(--ok)' %>;"></span>
+              <span class="sb-popover-row-body"><span class="sb-popover-row-name"><%= proj.name %></span></span>
+              <% if proj.id == current_project_id %><span class="sb-popover-row-check">✓</span><% end %>
+            <% end %>
+          <% end %>
+        </div>
+        <div class="sb-popover-sep"></div>
+        <%= link_to new_project_path, class: "sb-popover-action" do %><span class="sb-popover-glyph">+</span>New project<% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="sb-scroll">
+  <div class="sb-section-lbl">Workspace</div>
+  <nav class="sb-nav">
+    <%= link_to dashboard_path, class: "sb-item #{'active' if current_page?(dashboard_path)}" do %>
+      <span class="gl">›</span>
+      <span>Dashboard</span>
+      <span class="meta"></span>
+    <% end %>
+    <%= link_to projects_path, class: "sb-item #{'active' if controller_name == 'projects' && action_name == 'index'}" do %>
+      <span class="gl">/</span>
+      <span>All projects</span>
+      <span class="meta"><%= accessible_projects.size %></span>
+    <% end %>
+    <%= link_to search_path, class: "sb-item #{'active' if controller_name == 'search'}" do %>
+      <span class="gl">~</span>
+      <span>Search</span>
+      <span class="meta"></span>
+    <% end %>
+  </nav>
+
+  <%# Current project's pages. Switching between projects is the project switcher's
+      job (above); listing every project here too would just duplicate it. %>
+  <% if @project && current_project_id %>
+    <div class="sb-section-lbl">Project</div>
+    <nav class="sb-nav">
+      <%= link_to project_path(@project),
+            class: "sb-item #{'active' if controller_name == 'projects' && action_name == 'show'}" do %>
+        <span class="gl">›</span><span>Overview</span><span class="meta"></span>
+      <% end %>
+      <%= link_to groups_project_events_path(@project),
+            class: "sb-item #{'active' if controller_name == 'events' && action_name == 'groups'}" do %>
+        <span class="gl">▸</span><span>Events</span><span class="meta"><%= number_with_delimiter(@project.events_count) %></span>
+      <% end %>
+      <%= link_to project_events_path(@project),
+            class: "sb-item #{'active' if controller_name == 'events' && action_name == 'index'}" do %>
+        <span class="gl">~</span><span>Raw stream</span><span class="meta"></span>
+      <% end %>
+      <%= link_to logs_project_events_path(@project),
+            class: "sb-item #{'active' if controller_name == 'events' && action_name == 'logs'}" do %>
+        <span class="gl">≡</span><span>Logs</span><span class="meta"></span>
+      <% end %>
+      <%= link_to edit_project_path(@project),
+            class: "sb-item #{'active' if controller_name == 'projects' && action_name == 'edit'}" do %>
+        <span class="gl">#</span><span>Settings</span><span class="meta"></span>
+      <% end %>
+    </nav>
+  <% end %>
+
+  <%# Org switching now lives in the top switcher; this section is the active org's settings. %>
+  <% if primary_org && primary_membership %>
+    <div class="sb-section-lbl">Organization</div>
+    <nav class="sb-nav">
+      <% if primary_membership.admin? %>
+        <%= link_to organization_memberships_path(primary_org),
+              class: "sb-item #{'active' if controller_name == 'memberships'}" do %>
+          <span class="gl">@</span><span>Team members</span><span class="meta"><%= member_counts_by_org_id[primary_org.id] || 0 %></span>
+        <% end %>
+      <% end %>
+      <%= link_to edit_alert_preference_path(primary_org),
+            class: "sb-item #{'active' if controller_name == 'alert_preferences'}" do %>
+        <span class="gl">!</span><span>Alerts</span><span class="meta"></span>
+      <% end %>
+      <% if primary_membership.admin? %>
+        <%= link_to edit_organization_path(primary_org),
+              class: "sb-item #{'active' if controller_name == 'organizations' && action_name == 'edit'}" do %>
+          <span class="gl">#</span><span>Settings</span><span class="meta"></span>
+        <% end %>
+      <% end %>
+    </nav>
+  <% end %>
+
+  </div>
+
+  <div class="sb-foot">
+    <% if primary_org %>
+      <%# Account actions + org switching live in the top org switcher; foot is identity only. %>
+      <div class="sb-foot-user">
+        <span class="av"><%= avatar_letter %></span>
+        <span class="sb-foot-text">
+          <span class="sb-foot-name"><%= display_name %></span>
+          <span class="sb-foot-meta"><%= primary_membership&.role&.to_s&.capitalize || "Member" %><% if orgs.size > 1 %> · <%= pluralize(orgs.size, "org") %><% end %></span>
+        </span>
+      </div>
+    <% else %>
+      <%# No organization yet (no top switcher) — keep account actions reachable here. %>
+      <div class="relative" data-controller="dropdown">
+        <button class="sb-user" data-action="click->dropdown#toggle" type="button">
+          <div class="av"><%= avatar_letter %></div>
+          <div class="name"><%= display_name %></div>
+          <div class="caret">▾</div>
+        </button>
+        <div class="sb-user-menu hidden" data-dropdown-target="menu">
+          <% if current_user.admin? %>
+            <%= link_to "Admin", admin_root_path %>
+            <div class="divider"></div>
+          <% end %>
+          <%= link_to "Account settings", edit_user_registration_path %>
+          <%= button_to "Sign out", destroy_user_session_path, method: :delete, form: { class: "contents" }, class: "danger" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</aside>

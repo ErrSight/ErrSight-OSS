@@ -1,0 +1,16 @@
+<%# Event show — unresolve: swap status badge, action button, and sidebar status %>
+<%= turbo_stream.replace "event-status-badge" do %>
+  <span id="event-status-badge"><%= @event.level.to_s.upcase %> · unhandled</span>
+<% end %>
+
+<%= turbo_stream.replace "event-resolve-action" do %>
+  <div id="event-resolve-action" style="display: contents;">
+    <%= button_to resolve_project_event_path(@project, @event), method: :patch, form: { class: "contents" }, class: "btn btn-primary" do %>
+      ✓ Resolve
+    <% end %>
+  </div>
+<% end %>
+
+<%= turbo_stream.replace "event-sidebar-status" do %>
+  <div id="event-sidebar-status">status <span style="color: var(--fg);">unresolved</span></div>
+<% end %>

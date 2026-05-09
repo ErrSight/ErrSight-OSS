@@ -1,0 +1,18 @@
+<% events.each do |event| %>
+  <%= render "events/log_row", event: event, project: @project %>
+<% end %>
+
+<% if pagy.next %>
+  <% next_url = logs_project_events_path(@project,
+       page: pagy.next,
+       environment: params[:environment],
+       level: params[:level],
+       q: params[:q]) %>
+  <div data-controller="infinite-scroll"
+       data-infinite-scroll-url-value="<%= next_url %>">
+    <div style="padding: 14px 18px; font-family: var(--mono); font-size: 11.5px; color: var(--fg-dimmer); text-align:center;"
+         data-infinite-scroll-target="spinner">
+      — loading more —
+    </div>
+  </div>
+<% end %>

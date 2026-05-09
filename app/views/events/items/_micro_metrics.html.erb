@@ -1,0 +1,30 @@
+<%# One-line metric strip (replaces the old 4 big tiles + live feed). %>
+<div class="es-micro">
+  <div class="es-micro-item">
+    <span class="es-micro-label">events / 24h</span>
+    <span class="es-micro-num"><%= number_with_delimiter(@metrics[:events_24h]) %></span>
+  </div>
+  <div class="es-micro-item">
+    <span class="es-micro-label">users</span>
+    <span class="es-micro-num"><%= number_with_delimiter(@metrics[:users_24h]) %></span>
+  </div>
+  <div class="es-micro-item">
+    <span class="es-micro-label">p95</span>
+    <%# ErrSight does not capture request timing yet. TODO: real p95. %>
+    <span class="es-micro-num es-micro-na">—</span>
+  </div>
+  <div class="es-micro-item">
+    <span class="es-micro-label">ingest</span>
+    <span class="es-micro-num"><%= number_with_precision(@metrics[:ingest_per_sec], precision: 2) %><span class="es-micro-unit">/s avg</span></span>
+  </div>
+  <span class="es-micro-live<%= ' is-paused' if @project.ingestion_paused? %>">
+    <span class="dot"></span>
+    <% if @project.ingestion_paused? %>
+      PAUSED
+    <% elsif @metrics[:last_event_at] %>
+      LIVE · last event <%= items_short_ago(@metrics[:last_event_at]) %> ago
+    <% else %>
+      LIVE
+    <% end %>
+  </span>
+</div>

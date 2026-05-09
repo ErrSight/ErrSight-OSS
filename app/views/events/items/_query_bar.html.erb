@@ -1,0 +1,79 @@
+<%#
+  Query bar: removable token chips + free-text input + live suggestions, plus
+  the right-side controls (sort / columns menus and density). Locals: mode.
+
+  A GET form to the current route. The canonical token string lives in the
+  hidden :q field, which items_query_controller keeps in sync as chips are
+  added/removed; submitting reloads with the new filters. The other state
+  (layout/view/sort/cols/per/…) rides along as hidden fields so a query submit
+  never drops it.
+%>
+<%= form_with url: request.path, method: :get, class: "es-qrow", data: { controller: "items-query" } do %>
+  <%= items_hidden_state_fields(except: :q) %>
+
+  <div class="es-query" data-items-query-target="box" data-action="click->items-query#focus">
+    <span class="es-query-glyph" aria-hidden="true">⌕</span>
+    <%= hidden_field_tag :q, @items_query.to_s, data: { items_query_target: "query" } %>
+
+    <% @items_query.chips.each do |chip| %>
+      <span class="es-token <%= chip[:tone] %>">
+        <span class="es-token-k"><%= chip[:key] %></span>
+        <span class="es-token-v"><%= chip[:value] %></span>
+        <button type="button" class="es-token-x" aria-label="Remove <%= chip[:raw] %>"
+                data-action="items-query#removeChip" data-raw="<%= chip[:raw] %>">✕</button>
+      </span>
+    <% end %>
+
+    <input type="text" class="es-query-input" autocomplete="off" spellcheck="false"
+           aria-label="Filter <%= mode %>"
+           placeholder="<%= @items_query.chips.any? ? '' : 'Filter by level:, env:, is:, assigned:, release:…' %>"
+           data-items-query-target="input"
+           data-action="keydown->items-query#keydown input->items-query#typed focus->items-query#open">
+    <span class="es-query-kbd" data-items-query-target="kbd">↵</span>
+
+    <div class="es-qsuggest" data-items-query-target="suggest" role="listbox" hidden></div>
+  </div>
+
+  <div class="es-qctl">
+    <% if mode == :issues %>
+      <%# Sort menu %>
+      <div class="es-menuwrap" data-controller="dropdown">
+        <button type="button" class="es-ctlbtn" data-action="dropdown#toggle">
+          <span class="es-ctlbtn-glyph">⇅</span> <%= ItemsHelper::SORT_OPTIONS.to_h[@sort_key] || "Sort" %> <span class="es-ctl-caret">⌄</span>
+        </button>
+        <div class="es-menu hidden" data-dropdown-target="menu">
+          <div class="es-menu-label">Sort by</div>
+          <% ItemsHelper::SORT_OPTIONS.each do |key, label| %>
+            <%= link_to items_sort_url(key), class: "es-menu-row" do %>
+              <%= label %><% if items_sorted?(key) %><span class="es-menu-check"><%= items_sort_arrow(key) %></span><% end %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Columns menu %>
+      <div class="es-menuwrap" data-controller="dropdown">
+        <button type="button" class="es-ctlbtn" data-action="dropdown#toggle">
+          <span class="es-ctlbtn-glyph">▦</span> Columns <span class="es-ctl-caret">⌄</span>
+        </button>
+        <div class="es-menu hidden" data-dropdown-target="menu">
+          <div class="es-menu-label">Toggle columns</div>
+          <% ItemsHelper::ISSUE_COLUMNS.each do |col| %>
+            <%= link_to items_toggle_col_url(col[:id]), class: "es-menu-row" do %>
+              <span class="es-menu-box<%= ' on' if items_col?(col[:id]) %>"><%= "✓" if items_col?(col[:id]) %></span><%= col[:label] %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Density + zebra (presentation-only, persisted client-side) %>
+    <div class="es-prefs" data-controller="items-view">
+      <div class="es-density">
+        <button type="button" data-items-view-target="cozy" data-action="items-view#cozy">cozy</button>
+        <button type="button" data-items-view-target="dense" data-action="items-view#dense">dense</button>
+      </div>
+      <button type="button" class="es-ctlbtn" data-items-view-target="zebra" data-action="items-view#toggleZebra" title="Zebra rows" aria-label="Toggle zebra rows">▤</button>
+    </div>
+  </div>
+<% end %>

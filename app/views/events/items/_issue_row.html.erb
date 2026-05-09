@@ -1,0 +1,76 @@
+<%# A single dense, two-line issue row. Local: group (an OpenStruct from
+    EventRepository.grouped_by_fingerprint). Keeps the .iss-row link + .lvl chip
+    + .cnt .spark structure the existing tests + overlay rely on. %>
+<% lvl   = items_level_name(group.severity) %>
+<% issue = @issues_by_fingerprint[group.fingerprint] %>
+<% klass, rest = items_split_message(group.last_message) %>
+<%= link_to project_issue_path(@project, group.fingerprint),
+      class: "iss-row es-irow#{' muted' if group.muted}",
+      data: { turbo_frame: "issue-overlay" } do %>
+  <span class="es-cell-check" role="checkbox" aria-checked="false" tabindex="0"
+        aria-label="Select issue"
+        data-action="click->items-select#toggle keydown->items-select#keyToggle"
+        data-items-select-id-param="<%= group.fingerprint %>">
+    <span class="es-check" aria-hidden="true"></span>
+  </span>
+
+  <span class="es-cell-level">
+    <span class="lvl <%= lvl %>"><span class="dot"></span><%= lvl.upcase %></span>
+  </span>
+
+  <span class="es-cell-issue">
+    <span class="es-issue-l1">
+      <span class="es-issue-type"><%= klass.presence || group.last_message.to_s.truncate(80) %></span>
+      <% if rest.present? %><span class="es-issue-msg"><%= rest.truncate(140) %></span><% end %>
+      <% if group.first_seen.present? && group.first_seen >= 24.hours.ago %><span class="es-issue-new">NEW</span><% end %>
+    </span>
+    <span class="es-issue-l2">
+      <span class="es-issue-fp">#<%= group.fingerprint.to_s[0, 8] %></span>
+      <% if group.all_resolved %>
+        <span class="resolved-badge">resolved</span>
+      <% elsif group.any_resolved %>
+        <span class="tag"><span class="v">partial</span></span>
+      <% end %>
+      <% if @regressed_fingerprints&.include?(group.fingerprint) %><span class="tag regr">regression</span><% end %>
+      <% if group.muted %><span class="tag mute">muted</span><% end %>
+      <% if issue&.external_url.present? %><span class="tag rel"><span class="k">link</span><span class="v">↗</span></span><% end %>
+    </span>
+  </span>
+
+  <% if items_col?("env") %>
+    <span class="es-cell-env">
+      <span class="es-env-badge<%= ' is-staging' unless group.last_environment.to_s == 'production' %>">
+        <span class="es-env-dot"></span><%= group.last_environment.presence || "—" %>
+      </span>
+    </span>
+  <% end %>
+
+  <% if items_col?("spark") %>
+    <span class="es-cell-spark cnt">
+      <% bars = @spark_by_fingerprint && @spark_by_fingerprint[group.fingerprint] %>
+      <% if bars&.any? { |b| b.to_i.positive? } %>
+        <% peak = [ bars.max, 1 ].max %>
+        <div class="spark <%= lvl %>" aria-hidden="true" title="events, last 24h">
+          <% bars.each do |b| %><i style="height: <%= b.to_i.positive? ? [ (b.to_f / peak * 100).round, 14 ].max : 8 %>%;"></i><% end %>
+        </div>
+      <% else %>
+        <span class="es-cell-dash">—</span>
+      <% end %>
+    </span>
+  <% end %>
+
+  <% if items_col?("events") %><span class="es-cell-num"><%= number_with_delimiter(group.occurrences) %></span><% end %>
+  <% if items_col?("users") %><span class="es-cell-num"><%= group.affected_users.to_i.positive? ? number_with_delimiter(group.affected_users) : "—" %></span><% end %>
+  <% if items_col?("last_seen") %>
+    <span class="es-cell-when"><%= items_short_ago(group.last_seen) %><small><%= group.last_seen.strftime("%H:%M:%S") if group.last_seen.respond_to?(:strftime) %></small></span>
+  <% end %>
+  <% if items_col?("assignee") %>
+    <span class="es-cell-assignee">
+      <% if issue&.assigned_to %>
+        <span class="av" title="<%= issue.assigned_to.email %>"><%= issue.assigned_to.email.to_s[0, 2].upcase %></span>
+      <% else %>
+        <span class="av unassigned">+</span>
+      <% end %>
+    </span>
+  <% end %>
+<% end %>

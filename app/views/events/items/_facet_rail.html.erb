@@ -1,0 +1,40 @@
+<%#
+  Faceted rail (layout B). Each group uses a native <details> for collapse (no
+  JS). Rows are links that toggle the matching query token. Locals: mode.
+%>
+<aside class="es-facets">
+  <div class="es-facet-search" aria-hidden="true"><span>⌕</span> Filter facets…</div>
+
+  <%
+    facet_groups = [
+      [ "LEVEL",       :level ],
+      [ "STATUS",      :status ],
+      [ "ENVIRONMENT", :env ],
+      [ "RELEASE",     :release ],
+      [ "ASSIGNEE",    :assignee ]
+    ]
+  %>
+  <% facet_groups.each do |title, key| %>
+    <%# Release has no per-issue aggregate, so it only narrows the raw Events view. %>
+    <% next if key == :release && mode == :issues %>
+    <% rows = @facets[key] %>
+    <% next if rows.blank? %>
+    <details class="es-facet-group" <%= "open" unless %i[release assignee].include?(key) %>>
+      <summary class="es-facet-grouphead"><span class="caret">▾</span><%= title %></summary>
+      <% rows.each do |facet| %>
+        <%= link_to items_facet_href(key, facet), class: "es-facet-row#{' on' if facet[:active]}" do %>
+          <span class="es-facet-name">
+            <span class="es-check<%= ' on' if facet[:active] %>" aria-hidden="true"></span>
+            <% if facet[:dot] %><span class="es-chip-dot" style="background: <%= facet[:dot] %>;"></span><% end %>
+            <%= facet[:name] %>
+          </span>
+          <% if facet[:count] %><span class="es-facet-count"><%= number_with_delimiter(facet[:count]) %></span><% end %>
+        <% end %>
+      <% end %>
+    </details>
+  <% end %>
+
+  <% if @items_query.tokens.any? %>
+    <%= link_to "✕ Clear filters", items_url(q: nil), class: "es-facet-clear" %>
+  <% end %>
+</aside>

@@ -1,0 +1,58 @@
+<%
+  field_style = "width:100%; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 12px; font-family: var(--sans); font-size: 13.5px;"
+%>
+<%= form_with model: alert_rule, url: url, method: method do |f| %>
+  <% if alert_rule.errors.any? %>
+    <div style="border: 1px solid color-mix(in oklab, var(--err) 30%, transparent); background: color-mix(in oklab, var(--err) 10%, transparent); color: var(--err); border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 18px;">
+      <ul style="margin:0; padding-left: 18px;">
+        <% alert_rule.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div style="display:grid; gap:16px;">
+    <div>
+      <%= f.label :name, class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+      <%= f.text_field :name, style: field_style %>
+    </div>
+
+    <div>
+      <%= f.label :rule_type, "When to fire", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+      <%= f.select :rule_type,
+            [["Every event", "every_event"], ["First occurrence of a fingerprint", "first_occurrence"], ["Threshold: N events in a window", "threshold"]],
+            {},
+            style: field_style %>
+    </div>
+
+    <div>
+      <%= f.label :level_threshold, "Minimum severity", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+      <%= f.select :level_threshold,
+            [["Debug & above", 0], ["Info & above", 1], ["Warning & above", 2], ["Error & above", 3], ["Fatal only", 4]],
+            {},
+            style: field_style %>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+      <div>
+        <%= f.label :count_threshold, "Count (threshold rules)", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+        <%= f.number_field :count_threshold, min: 1, style: field_style %>
+      </div>
+      <div>
+        <%= f.label :window_seconds, "Window (seconds)", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+        <%= f.number_field :window_seconds, min: 60, style: field_style %>
+      </div>
+    </div>
+
+    <label style="display:inline-flex; align-items:center; gap:8px; font-family: var(--sans); font-size: 13.5px; color: var(--fg); cursor:pointer;">
+      <%= f.check_box :active, style: "accent-color: var(--accent); width:14px; height:14px;" %>
+      Active
+    </label>
+  </div>
+
+  <div style="margin-top: 22px; display:flex; align-items:center; gap:12px;">
+    <%= f.submit submit_label, class: "btn btn-primary btn-sm" %>
+    <%= link_to "Cancel", project_alert_rules_path(@project), class: "btn btn-ghost btn-sm" %>
+  </div>
+<% end %>

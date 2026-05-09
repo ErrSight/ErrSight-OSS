@@ -1,2 +1,20 @@
-#!/usr/bin/env ruby
-exec "./bin/rails", "server", *ARGV
+#!/usr/bin/env sh
+
+if ! gem list foreman -i --silent; then
+  echo "Installing foreman..."
+  gem install foreman
+fi
+
+# Default to port 3000 if not specified
+export PORT="${PORT:-3000}"
+
+# Let the debug gem allow remote connections,
+# but avoid loading until `debugger` is called
+export RUBY_DEBUG_OPEN="true"
+export RUBY_DEBUG_LAZY="true"
+
+# macOS fork-safety: prevents Obj-C runtime segfaults when Puma/Solid Queue
+# fork workers after native gems (pg, nokogiri, etc.) have been loaded.
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY="YES"
+
+exec foreman start -f Procfile.dev "$@"
