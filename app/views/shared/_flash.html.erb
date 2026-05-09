@@ -1,0 +1,32 @@
+<% if flash.any? %>
+  <div id="flash-messages" class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 w-full max-w-md px-4 pointer-events-none" data-turbo-temporary>
+    <% flash.each do |type, message| %>
+      <% classes = case type.to_s
+         when "notice" then "bg-emerald-50 border-emerald-300 text-emerald-800"
+         when "alert"  then "bg-red-50 border-red-300 text-red-800"
+         else               "bg-teal-50 border-teal-300 text-teal-800"
+         end %>
+      <div class="px-4 py-3 rounded-xl border shadow-lg <%= classes %> flex items-start justify-between pointer-events-auto"
+           data-controller="flash"
+           data-flash-timeout-value="5000">
+        <div class="flex items-center gap-2">
+          <% if type.to_s == "notice" %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          <% else %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          <% end %>
+          <span class="text-sm"><%= message %></span>
+        </div>
+        <button data-action="click->flash#dismiss" class="ml-4 opacity-70 hover:opacity-100 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    <% end %>
+  </div>
+<% end %>

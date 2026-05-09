@@ -7,8 +7,9 @@
 # Ignore bundler config.
 /.bundle
 
-# Ignore all environment files.
+# Ignore all environment files (keep the checked-in example).
 /.env*
+!/.env.example
 
 # Ignore all logfiles and tempfiles.
 /log/*
@@ -33,3 +34,13 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+
+/app/assets/builds/*
+!/app/assets/builds/.keep
+.DS_Store
+
+# Coverage report (simplecov, opt-in via COVERAGE=true).
+/coverage
+
+# Claude Code local worktrees
+/.claude/worktrees/

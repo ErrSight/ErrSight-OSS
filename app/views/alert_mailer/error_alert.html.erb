@@ -1,0 +1,65 @@
+<% level_color = @event.fatal? ? "#ff5a3c" : (@event.error? ? "#ff5a3c" : "#c79528") %>
+
+<h1 style="margin:0 0 8px; font-size:22px; font-weight:600; color:#17161a; letter-spacing:-0.3px;">
+  New <%= @event.level %> in
+  <span style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; color:#ff5a3c; font-weight:400;"><%= @project.name %></span>
+</h1>
+<p style="margin:0 0 24px; font-size:14px; color:#5b5a5f;">
+  We caught an exception on <%= @event.environment %> at <%= @event.occurred_at.strftime("%b %-d, %Y · %H:%M:%S UTC") %>.
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f6f5f1; border:1px solid #d9d7cf; border-radius:10px; margin:0 0 24px;">
+  <tr>
+    <td style="padding:18px 20px;">
+      <div style="margin:0 0 10px;">
+        <span style="display:inline-block; padding:3px 10px; background:<%= level_color %>; color:#17161a; font-size:11px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; border-radius:999px;">
+          <%= @event.level %>
+        </span>
+        <span style="display:inline-block; margin-left:6px; padding:3px 10px; background:#ecebe6; color:#5b5a5f; font-size:11px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; border-radius:999px;">
+          <%= @event.environment %>
+        </span>
+      </div>
+      <p style="margin:0 0 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:14px; line-height:1.5; color:#17161a; word-break:break-word;">
+        <%= @event.message.truncate(500) %>
+      </p>
+      <%
+        # Use the structured top frame when available — emails with
+        # "raised in app/controllers/users_controller.rb:18 in show" are
+        # easier to scan than a long absolute path. Falls back to the
+        # raw backtrace line for legacy events.
+        frames     = event_frames(@event)
+        raised_in  = event_first_frame_label(@event, frames)
+      %>
+      <% if raised_in.present? %>
+        <p style="margin:0; padding:10px 12px; background:#ffffff; border:1px solid #ecebe6; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; line-height:1.5; color:#5b5a5f; word-break:break-word;">
+          <%= raised_in %>
+        </p>
+      <% end %>
+      <%
+        causes = event_causes(@event)
+      %>
+      <% if causes.any? %>
+        <div style="margin:10px 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.5px; line-height:1.6; color:#5b5a5f;">
+          <% causes.each do |c| %>
+            <div>
+              <span style="color:#8f8d90;">↳ rescued from</span>
+              <span style="color:#ff5a3c; font-weight:600;"><%= c["class"] %></span><% if c["message"].to_s.strip != "" %><span style="color:#8f8d90;">:</span> <span style="color:#17161a;"><%= c["message"].to_s.truncate(160) %></span><% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td style="border-radius:8px; background:#17161a;">
+      <%= link_to "View event details", @event_url, style: "display:inline-block; padding:12px 22px; color:#f6f5f1; text-decoration:none; font-size:14px; font-weight:600; letter-spacing:0.2px; border-radius:8px;" %>
+    </td>
+  </tr>
+</table>
+
+<p style="margin:28px 0 0; font-size:12px; color:#8f8d90;">
+  You're receiving this because you have alerts enabled for <%= @project.name %>.
+</p>

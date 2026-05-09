@@ -1,0 +1,15 @@
+[ErrSight · <%= @project.name %>]
+
+<%= @events.count %> new <%= 'error'.pluralize(@events.count) %> grouped over the last <%= @period %>.
+
+<% @events.first(20).each do |event| %>
+  [<%= event.level.upcase %>] <%= event.occurred_at.strftime("%H:%M") %>  <%= event.message.truncate(100) %>
+<% end %>
+<% if @events.count > 20 %>
+… and <%= @events.count - 20 %> more.
+<% end %>
+
+View all events: <%= @project_url %>
+
+--
+You're receiving this digest because you have hourly alerts enabled for <%= @project.name %>.

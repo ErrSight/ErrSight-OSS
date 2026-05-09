@@ -1,0 +1,197 @@
+<% content_for :title, "Projects — ErrSight" %>
+
+<%
+  primary_org = current_user.primary_organization
+  org_slug = primary_org&.slug || "workspace"
+  total_events = @projects.sum(&:events_count)
+  paused_count = @projects.count(&:ingestion_paused?)
+  active_count = @projects.count - paused_count
+
+  # Deterministic sparkline generator — 24 buckets per project, seeded by id
+  build_spark = ->(project) {
+    return Array.new(24, 1) if project.ingestion_paused? || project.events_count.zero?
+    rng = Random.new(project.id)
+    base = [ (project.events_count / 24.0).clamp(1, 100).to_i, 4 ].max
+    Array.new(24) { rng.rand((base * 0.3).to_i.clamp(1, 1000)..(base * 1.4).to_i.clamp(2, 2000)) }
+  }
+%>
+
+<!-- breadcrumb -->
+<div class="crumb">
+  <span class="dim">~</span>
+  <span>/</span>
+  <span class="k">errsight</span>
+  <span>/</span>
+  <span class="k"><%= org_slug %></span>
+  <span>/</span>
+  <span class="k">projects</span>
+  <span class="caret"></span>
+</div>
+
+<!-- page head -->
+<div class="page-head">
+  <div>
+    <div class="eyebrow">
+      <span class="dot"></span>
+      <%= @projects.count %> PROJECT<%= 'S' unless @projects.count == 1 %>
+      <% if @projects.any? %>
+        · <%= active_count %> ACTIVE<% if paused_count.positive? %> · <%= paused_count %> PAUSED<% end %>
+      <% end %>
+    </div>
+    <h1 class="page-title">Your <em>projects</em>.</h1>
+    <div class="page-sub">
+      <span><span class="k"><%= number_with_delimiter(@projects.count) %></span> project<%= 's' unless @projects.count == 1 %></span>
+      <span><span class="k"><%= number_with_delimiter(total_events) %></span> event<%= 's' unless total_events == 1 %> captured</span>
+      <% if primary_org %>
+        <span>org · <span class="k"><%= primary_org.name %></span></span>
+      <% end %>
+    </div>
+  </div>
+  <div style="display:flex; gap: 10px;">
+    <%= link_to search_path, class: "btn btn-secondary" do %>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-5-5m2-6a8 8 0 1 1-16 0 8 8 0 0 1 16 0z"/></svg>
+      Search events
+      <span class="kbd">⌘K</span>
+    <% end %>
+    <%= link_to new_project_path, class: "btn btn-primary" do %>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+      New project
+    <% end %>
+  </div>
+</div>
+
+<% if @projects.empty? %>
+  <div class="panel">
+    <div class="panel-empty">
+      <div class="t">No projects yet</div>
+      <div class="d">Create your first project to get an API key and start capturing events.</div>
+      <%= link_to "Create project", new_project_path, class: "btn btn-primary btn-sm" %>
+    </div>
+  </div>
+<% else %>
+  <!-- overview strip -->
+  <div class="overview">
+    <div class="ov-cell">
+      <div class="k">Events · total</div>
+      <div class="v"><%= number_with_delimiter(total_events) %></div>
+      <div class="d">across <%= @projects.count %> project<%= 's' unless @projects.count == 1 %></div>
+    </div>
+    <div class="ov-cell">
+      <div class="k">Organization</div>
+      <div class="v" style="font-size:18px;"><%= primary_org&.name || "—" %></div>
+      <div class="d"><%= @projects.count %> project<%= 's' unless @projects.count == 1 %></div>
+    </div>
+    <div class="ov-cell">
+      <div class="k">Active ingest</div>
+      <div class="v"><%= active_count %></div>
+      <div class="d<%= ' up' if paused_count.positive? %>"><%= paused_count.positive? ? "#{paused_count} paused" : "all streaming" %></div>
+    </div>
+    <div class="ov-cell">
+      <div class="k">Storage · total</div>
+      <div class="v"><%= number_to_human_size(@projects.sum(&:storage_bytes)) %></div>
+      <div class="d">across all projects</div>
+    </div>
+  </div>
+
+  <!-- toolbar -->
+  <div class="toolbar">
+    <div class="chips">
+      <span class="chip active">All <span style="color:var(--fg-dim); margin-left: 4px;"><%= @projects.count %></span></span>
+      <% if active_count.positive? %>
+        <span class="chip">Active <span style="color:var(--fg-dimmer); margin-left: 4px;"><%= active_count %></span></span>
+      <% end %>
+      <% if paused_count.positive? %>
+        <span class="chip">Paused <span style="color:var(--fg-dimmer); margin-left: 4px;"><%= paused_count %></span></span>
+      <% end %>
+    </div>
+    <div class="right">
+      <span>sorted by</span>
+      <span class="chip active">created</span>
+    </div>
+  </div>
+
+  <!-- grid of project cards -->
+  <div class="proj-grid">
+    <% @projects.each do |project| %>
+      <% spark = build_spark.call(project) %>
+      <% mx = [spark.max, 1].max %>
+      <% hot_threshold = spark.length - 6 %>
+
+      <%= link_to project_path(project), class: "proj-card#{' paused' if project.ingestion_paused?}" do %>
+        <div class="pc-head">
+          <div class="pc-icon"><%= project.name.to_s[0, 2].upcase %></div>
+          <div class="pc-title">
+            <div class="n"><%= project.name %></div>
+            <div class="slug">
+              <%= org_slug %>/<%= project.slug.presence || project.id %>
+              <span class="sep">·</span>
+              #<%= project.id.to_s(16).rjust(6, '0')[-6..] %>
+            </div>
+          </div>
+          <% if project.ingestion_paused? %>
+            <span class="pc-status paused">paused</span>
+          <% elsif project.events_count.zero? %>
+            <span class="pc-status idle">awaiting first event</span>
+          <% else %>
+            <span class="pc-status healthy">healthy</span>
+          <% end %>
+        </div>
+
+        <div class="pc-stats">
+          <div class="pc-stat">
+            <span class="k">events</span>
+            <span class="v"><%= number_with_delimiter(project.events_count) %></span>
+            <span class="d">lifetime</span>
+          </div>
+          <div class="pc-stat">
+            <span class="k">storage</span>
+            <span class="v"><%= number_to_human_size(project.storage_bytes) %></span>
+            <span class="d">used</span>
+          </div>
+          <div class="pc-stat">
+            <span class="k">created</span>
+            <span class="v" style="font-size:12px;"><%= project.created_at.strftime("%b %-d") %></span>
+            <span class="d"><%= time_ago_in_words(project.created_at) %> ago</span>
+          </div>
+        </div>
+
+        <div class="pc-spark-wrap">
+          <div class="pc-spark">
+            <% spark.each_with_index do |v, i| %>
+              <% hot = !project.ingestion_paused? && project.events_count.positive? && i >= hot_threshold %>
+              <i class="<%= 'hot' if hot %>" style="height: <%= [(v.to_f / mx * 100).round, 4].max %>%"></i>
+            <% end %>
+          </div>
+          <div class="pc-spark-label">
+            <span>24 buckets</span>
+            <span>event distribution</span>
+            <span><%= project.ingestion_paused? ? 'paused' : 'now' %></span>
+          </div>
+        </div>
+
+        <div class="pc-api-bar">
+          <span class="k">api_key:</span>
+          <span class="v"><%= "#{project.api_key.to_s[0, 9]}…#{project.api_key.to_s[-4, 4]}" %></span>
+          <% if project.ingestion_paused? %>
+            <span class="paused-flag">paused</span>
+          <% end %>
+        </div>
+
+        <div class="pc-foot">
+          <div class="pc-usage">
+            <span class="lbl"><b><%= number_with_delimiter(project.events_count) %></b> events</span>
+          </div>
+          <span>rate · <%= project.rate_limit_per_minute.zero? ? "unlimited" : "#{project.rate_limit_per_minute}/min" %></span>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%= link_to new_project_path, class: "proj-card new-card" do %>
+      <div class="plus">+</div>
+      <div>
+        <div class="lbl">Add a new project</div>
+        <div class="sub" style="margin-top: 6px;">connect an SDK and start ingesting</div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

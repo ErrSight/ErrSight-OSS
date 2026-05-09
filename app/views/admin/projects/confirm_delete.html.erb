@@ -1,0 +1,8 @@
+<div class="blank_slate">
+  <h2>Delete project "<%= resource.name %>"?</h2>
+  <p style="margin:12px 0;">This will permanently delete the project and all associated events and usage records.</p>
+  <%= button_to "Yes, delete it", do_delete_admin_project_path(resource.id),
+        method: :post,
+        style: "background:#c0392b; color:#fff; padding:6px 14px; border:none; border-radius:3px; cursor:pointer; margin-right:8px;" %>
+  <%= link_to "Cancel", admin_project_path(resource.id) %>
+</div>

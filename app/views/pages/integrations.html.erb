@@ -1,0 +1,366 @@
+<% content_for :title, "Integrations — ErrSight" %>
+<% content_for :description, "Official SDKs for Ruby on Rails, Python (Django / Flask / FastAPI / Celery), and JavaScript, a single REST endpoint, and a roadmap of runtimes coming next. Drop ErrSight into any stack in under two minutes." %>
+
+<!-- ================= NAV ================= -->
+<nav class="top">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <%= image_tag "errsight-wordmark-light.svg", alt: "ErrSight", class: "brand-logo", height: 36 %>
+    </a>
+    <div class="nav-links">
+      <%= link_to "Features", "/#features" %>
+      <%= link_to "Integrations", integrations_path, class: "active" %>
+      <%= link_to "Docs", docs_path %>
+      <%= link_to "Support", support_path %>
+    </div>
+    <div class="nav-right">
+      <% if user_signed_in? %>
+        <%= link_to "Dashboard", authenticated_root_path, class: "btn btn-primary" %>
+      <% else %>
+        <% if public_signup_allowed? %>
+          <%= link_to "Sign in", new_user_session_path, class: "btn btn-ghost" %>
+        <% end %>
+        <%= link_to primary_cta_label, primary_cta_path, class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero-integrations">
+  <div class="hero-integrations-inner">
+    <div>
+      <div class="crumbs">
+        <a href="/">errsight</a>
+        <span class="sep">/</span>
+        <span>integrations</span>
+      </div>
+      <h1 class="page-title">Ship where <em>you</em> already ship.</h1>
+    </div>
+    <p class="hero-sub">
+      Official SDKs, a single REST endpoint, and a roadmap of runtimes coming next. Drop ErrSight into any stack in under two minutes — every integration captures exceptions, logs, and user context out of the box.
+    </p>
+  </div>
+
+  <div class="container">
+    <div class="status-rail">
+      <div class="status-cell">
+        <div class="lbl">Available</div>
+        <div class="val">4 <em>SDKs</em></div>
+      </div>
+      <div class="status-cell">
+        <div class="lbl">On the way</div>
+        <div class="val">5 <em>runtimes</em></div>
+      </div>
+      <div class="status-cell">
+        <div class="lbl">Install time</div>
+        <div class="val">&lt; 2 <em>min</em></div>
+      </div>
+      <div class="status-cell">
+        <div class="lbl">SDK status</div>
+        <div class="val val-row">
+          <span class="val-dot"></span>
+          <span class="val-inline">all <em>operational</em></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= AVAILABLE NOW ================= -->
+<section id="available" class="container">
+  <div class="section-head">
+    <div>
+      <div class="section-label">01 · Available now</div>
+      <h2 class="section-title">Four ways to start <em>today</em>.</h2>
+    </div>
+    <div></div>
+    <div class="section-count">04 / 09 shipped</div>
+  </div>
+
+  <div class="available">
+    <!-- Ruby on Rails -->
+    <div class="integ-row">
+      <div class="integ-head">
+        <div class="integ-logo-lg" style="color:#e0564c">Rb</div>
+        <div>
+          <h3 class="integ-title">Ruby on Rails</h3>
+          <div class="integ-pkg">gem "errsight-ruby"</div>
+        </div>
+        <span class="status-chip ok">Stable</span>
+      </div>
+      <ul class="integ-feats">
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span><b>Auto-captures</b> every Rails exception and routing error.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>Broadcasts from <b>Rails.logger</b> automatically — all levels.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>Attaches <b>request context</b>, user, controller action, URL.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>First-class support for <b>Devise</b> &amp; <b>ActiveAdmin</b>.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>Respects <code>filter_parameters</code> — sensitive data stays local.</span></li>
+      </ul>
+      <div class="integ-side">
+<pre class="code-mini"><span class="c"># Gemfile</span>
+<span class="k">gem</span> <span class="s">"errsight-ruby"</span>
+
+<span class="c"># config/initializers/errsight.rb</span>
+<span class="a">Errsight</span>.configure { |c|
+  c.api_key = ENV[<span class="s">"ERRSIGHT_KEY"</span>]
+}</pre>
+        <div class="integ-actions">
+          <%= link_to "View docs →", docs_path(anchor: "ruby"), class: "btn btn-primary" %>
+          <a class="btn btn-secondary" href="https://github.com/errsight/errsight-ruby" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Python -->
+    <div class="integ-row">
+      <div class="integ-head">
+        <div class="integ-logo-lg" style="color:#3a7ebf">Py</div>
+        <div>
+          <h3 class="integ-title">Python</h3>
+          <div class="integ-pkg">pip install errsight · 3.8+</div>
+        </div>
+        <span class="status-chip ok">Stable</span>
+      </div>
+      <ul class="integ-feats">
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>First-class middleware for <b>Django</b>, <b>Flask</b>, and <b>FastAPI / Starlette</b> (sync and async).</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>Background workers covered — <b>Celery</b> + <b>RQ</b> with cross-process scope propagation.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span><b>AWS Lambda</b> decorator with sync flush before freeze.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span><b>ContextVar</b>-isolated scope — concurrent async requests never leak user/tag state.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span><code>logging.Handler</code> drop-in, structured frames, source context, cause chain.</span></li>
+      </ul>
+      <div class="integ-side">
+<pre class="code-mini"><span class="c"># pip install errsight</span>
+<span class="k">import</span> <span class="a">errsight</span>
+
+<span class="a">errsight</span>.init(
+    api_key=<span class="s">"elp_live_…"</span>,
+    environment=<span class="s">"production"</span>,
+)</pre>
+        <div class="integ-actions">
+          <%= link_to "View docs →", docs_path(anchor: "python"), class: "btn btn-primary" %>
+          <a class="btn btn-secondary" href="https://pypi.org/project/errsight/" target="_blank" rel="noopener">PyPI</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- React / JavaScript -->
+    <div class="integ-row">
+      <div class="integ-head">
+        <div class="integ-logo-lg" style="color:#d4ad1f">JS</div>
+        <div>
+          <h3 class="integ-title">React / JavaScript</h3>
+          <div class="integ-pkg">@errsight/js · zero deps</div>
+        </div>
+        <span class="status-chip ok">Stable</span>
+      </div>
+      <ul class="integ-feats">
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>Captures <b>window.onerror</b> and <b>unhandledrejection</b>.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>Drop-in <b>&lt;ErrorBoundary&gt;</b> for React trees.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>Manual logging: <code>info</code>, <code>warn</code>, <code>error</code>, <code>captureError()</code>.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span><b>setUser()</b> attaches ID &amp; email to every future event.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span><b>Zero dependencies</b>, ESM-first.</span></li>
+      </ul>
+      <div class="integ-side">
+<pre class="code-mini"><span class="c">// npm install @errsight/js</span>
+<span class="k">import</span> { <span class="a">init</span> } <span class="k">from</span> <span class="s">"@errsight/js"</span>;
+
+<span class="a">init</span>({
+  apiKey: <span class="s">"elp_live_…"</span>,
+  env: <span class="s">"production"</span>,
+});</pre>
+        <div class="integ-actions">
+          <%= link_to "View docs →", docs_path(anchor: "javascript"), class: "btn btn-primary" %>
+          <a class="btn btn-secondary" href="https://github.com/errsight/errsight-js" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- REST API -->
+    <div class="integ-row">
+      <div class="integ-head">
+        <div class="integ-logo-lg" style="color:var(--accent)">·/·</div>
+        <div>
+          <h3 class="integ-title">REST API</h3>
+          <div class="integ-pkg">/api/v1 · any language, any platform</div>
+        </div>
+        <span class="status-chip ok">Stable</span>
+      </div>
+      <ul class="integ-feats">
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>One endpoint: <b>POST /api/v1/events</b>.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>Send single events or <b>batches up to 100</b>.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>Authenticated via <b>X-API-Key</b> header.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span><b>CORS enabled</b> for browser clients and edge workers.</span></li>
+        <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg><span>Idempotency keys to protect against replay storms.</span></li>
+      </ul>
+      <div class="integ-side">
+<pre class="code-mini"><span class="k">curl</span> -X POST /api/v1/events \
+  -H <span class="s">"X-API-Key: elp_…"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{
+    "level": "error",
+    "message": "Payment failed"
+  }'</span></pre>
+        <div class="integ-actions">
+          <%= link_to "API reference →", docs_path(anchor: "api"), class: "btn btn-primary" %>
+          <%= link_to "cURL snippets", docs_path(anchor: "api"), class: "btn btn-secondary" %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COMING SOON ================= -->
+<section id="roadmap" class="container">
+  <div class="section-head">
+    <div>
+      <div class="section-label">02 · Coming soon</div>
+      <h2 class="section-title">Coming <em>soon</em>.</h2>
+    </div>
+    <div></div>
+    <div class="section-count">05 · in development</div>
+  </div>
+
+  <div class="soon-grid">
+    <% coming_soon = [
+      { tag: "TS",  color: "#5ea8ff", name: "Node / TypeScript",  pkg: "@errsight/node · Express · Fastify",    status: :soon },
+      { tag: "Go",  color: "#00add8", name: "Go",                 pkg: "errsight-go · 1.21+ · context-aware",   status: :soon },
+      { tag: "Rs",  color: "#ce412b", name: "Rust",               pkg: "errsight crate · tokio · axum · actix", status: :soon },
+      { tag: "PHP", color: "#8993be", name: "PHP / Laravel",      pkg: "errsight-php · Composer",               status: :soon },
+      { tag: "Ex",  color: "#4a6ee0", name: "Elixir / Phoenix",   pkg: "errsight_ex (hex) · LiveView aware",    status: :soon }
+    ] %>
+    <% coming_soon.each do |s| %>
+      <div class="soon-card">
+        <div class="soon-top">
+          <div class="soon-logo" style="color: <%= s[:color] %>"><%= s[:tag] %></div>
+          <% if s[:status] == :beta %>
+            <span class="status-chip beta">Beta</span>
+          <% else %>
+            <span class="status-chip soon">Coming soon</span>
+          <% end %>
+        </div>
+        <div>
+          <h3 class="soon-name"><%= s[:name] %></h3>
+          <div class="soon-pkg"><%= s[:pkg] %></div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<!-- ================= CAPABILITY MATRIX ================= -->
+<section class="container">
+  <div class="section-head">
+    <div>
+      <div class="section-label">03 · Capability matrix</div>
+      <h2 class="section-title">What each SDK <em>does</em>.</h2>
+    </div>
+    <div></div>
+    <p style="font-size: 13px; color: var(--fg-dim); max-width: 30ch; text-align: right; margin: 0; justify-self: end;">
+      Full parity is the goal. Coming-soon SDKs ship with the core set first and add the rest over their first two minor versions.
+    </p>
+  </div>
+
+  <div class="compat-wrap">
+    <table class="compat">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th class="c">Ruby</th>
+          <th class="c">Python</th>
+          <th class="c">JS</th>
+          <th class="c">REST</th>
+          <th class="c">Go</th>
+          <th class="c">Rust</th>
+          <th class="c">Node</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">Auto exception capture</td>
+          <td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-no">—</td>
+          <td class="c cell-partial">◐</td><td class="c cell-partial">◐</td><td class="c cell-partial">◐</td>
+        </tr>
+        <tr>
+          <td class="name">Log forwarding</td>
+          <td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-ok">●</td>
+          <td class="c cell-partial">◐</td><td class="c cell-partial">◐</td><td class="c cell-partial">◐</td>
+        </tr>
+        <tr>
+          <td class="name">User context auto-attach</td>
+          <td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-no">—</td>
+          <td class="c cell-no">—</td><td class="c cell-no">—</td><td class="c cell-partial">◐</td>
+        </tr>
+        <tr>
+          <td class="name">Source map resolution</td>
+          <td class="c cell-no">—</td><td class="c cell-no">—</td><td class="c cell-ok">●</td><td class="c cell-no">—</td>
+          <td class="c cell-no">—</td><td class="c cell-no">—</td><td class="c cell-partial">◐</td>
+        </tr>
+        <tr>
+          <td class="name">Async batching</td>
+          <td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-ok">●</td>
+          <td class="c cell-partial">◐</td><td class="c cell-partial">◐</td><td class="c cell-partial">◐</td>
+        </tr>
+        <tr>
+          <td class="name">Parameter filtering</td>
+          <td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-no">client-side</td>
+          <td class="c cell-partial">◐</td><td class="c cell-no">—</td><td class="c cell-partial">◐</td>
+        </tr>
+        <tr>
+          <td class="name">Release tracking</td>
+          <td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-ok">●</td><td class="c cell-ok">●</td>
+          <td class="c cell-no">—</td><td class="c cell-no">—</td><td class="c cell-no">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="compat-legend">
+    <span><span class="cell-ok">●</span>&nbsp;&nbsp;Shipped</span>
+    <span><span class="cell-partial">◐</span>&nbsp;&nbsp;Planned for GA</span>
+    <span><span class="cell-no">—</span>&nbsp;&nbsp;Not applicable</span>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="container">
+    <div class="foot-inner">
+      <div class="foot-col">
+        <a class="brand" href="/">
+          <%= image_tag "errsight-wordmark-light.svg", alt: "ErrSight", class: "brand-logo", height: 28 %>
+        </a>
+        <p class="foot-about">Lightweight error tracking &amp; log management for teams that ship more than they sleep.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <%= link_to "Features", "/#features" %>
+          <%= link_to "Integrations", integrations_path %>
+      </div>
+      <div class="foot-col">
+        <h4>Developers</h4>
+        <%= link_to "Documentation", docs_path %>
+        <%= link_to "Ruby / Rails SDK", docs_path(anchor: "ruby") %>
+        <%= link_to "Python SDK", docs_path(anchor: "python") %>
+        <%= link_to "React / JS SDK", docs_path(anchor: "javascript") %>
+        <%= link_to "REST API", docs_path(anchor: "api") %>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <% if user_signed_in? %>
+          <%= link_to "Dashboard", authenticated_root_path %>
+        <% else %>
+          <%= link_to "Sign in", new_user_session_path %>
+          <% if public_signup_allowed? %>
+            <%= link_to "Sign up", new_user_registration_path %>
+          <% end %>
+        <% end %>
+        <%= link_to "Support", support_path %>
+        <%= link_to "Privacy", privacy_path %>
+        <%= link_to "Terms", terms_path %>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© <%= Date.current.year %> ErrSight.</span>
+      <span>status: <span style="color: var(--ok)">● all systems operational</span></span>
+    </div>
+  </div>
+</footer>

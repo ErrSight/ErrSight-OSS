@@ -1,0 +1,7 @@
+[ErrSight]
+
+Your ErrSight account (<%= @resource.email %>) was locked after too many unsuccessful sign-in attempts.
+
+Unlock your account: <%= unlock_url(@resource, unlock_token: @token) %>
+
+If this wasn't you, someone may be attempting to access your account. Consider resetting your password after unlocking.

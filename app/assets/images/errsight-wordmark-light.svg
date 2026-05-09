@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 96" width="300" height="96" role="img" aria-label="ErrSight">
+  <rect width="300" height="96" fill="transparent"></rect>
+  <g transform="translate(20 16)">
+    <circle cx="32" cy="32" r="28" fill="none" stroke="#17161a" stroke-width="3"></circle>
+    <circle cx="32" cy="32" r="17" fill="none" stroke="#17161a" stroke-width="2"></circle>
+    <circle cx="32" cy="32" r="6" fill="#ff5a3c"></circle>
+    <path d="M 29 33.5 L 32 30.5 L 35 33.5" fill="none" stroke="#f6f5f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    <circle cx="53" cy="18" r="4" fill="#ff5a3c"></circle>
+    <circle cx="53" cy="18" r="1.8" fill="#17161a"></circle>
+  </g>
+  <text x="104" y="62" font-family="ui-sans-serif, -apple-system, &#39;Geist&#39;, Inter, system-ui, sans-serif" font-size="46" font-weight="600" letter-spacing="-1.6" fill="#17161a">Err<tspan font-style="italic" font-family="ui-serif, Georgia, &#39;Instrument Serif&#39;, serif" fill="#ff5a3c" font-weight="400">Sight</tspan></text>
+</svg>

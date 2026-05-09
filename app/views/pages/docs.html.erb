@@ -1,0 +1,1105 @@
+<% content_for :title, "Developer Docs — ErrSight" %>
+<% content_for :description, "Complete integration guide for the ErrSight Ruby gem, Python SDK (Django, Flask, FastAPI, Celery, RQ, AWS Lambda), JavaScript SDK, React Native SDK, and REST API." %>
+
+<!-- ================= NAV ================= -->
+<nav class="top">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <%= image_tag "errsight-wordmark-light.svg", alt: "ErrSight", class: "brand-logo", height: 36 %>
+    </a>
+    <div class="nav-links">
+      <%= link_to "Features", "/#features" %>
+      <%= link_to "Integrations", integrations_path %>
+      <%= link_to "Docs", docs_path, class: "active" %>
+      <%= link_to "Support", support_path %>
+    </div>
+    <div class="nav-right">
+      <% if user_signed_in? %>
+        <%= link_to "Dashboard", authenticated_root_path, class: "btn btn-primary" %>
+      <% else %>
+        <% if public_signup_allowed? %>
+          <%= link_to "Sign in", new_user_session_path, class: "btn btn-ghost" %>
+        <% end %>
+        <%= link_to primary_cta_label, primary_cta_path, class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="docs-hero">
+  <div class="docs-hero-inner">
+    <div class="crumbs">
+      <a href="/">errsight</a>
+      <span class="sep">/</span>
+      <span>docs</span>
+    </div>
+    <h1 class="page-title">Ship with <em>confidence</em>.</h1>
+    <p class="hero-sub" style="margin-top: 24px;">
+      Everything you need to integrate ErrSight into your Rails, Python, React, or React Native app — plus a REST API if you'd rather skip the SDK.
+    </p>
+  </div>
+</header>
+
+<!-- ================= BODY ================= -->
+<div class="docs-layout">
+  <aside class="docs-sidebar">
+    <div class="sb-group">
+      <p class="sb-label">Getting started</p>
+      <a href="#quickstart">Quick start</a>
+    </div>
+    <div class="sb-group">
+      <p class="sb-label">Ruby / Rails</p>
+      <a href="#ruby">Installation</a>
+      <a href="#ruby-config">Configuration</a>
+      <a href="#ruby-manual">Manual logging</a>
+      <a href="#ruby-env">Environment variables</a>
+    </div>
+    <div class="sb-group">
+      <p class="sb-label">Python</p>
+      <a href="#python">Installation</a>
+      <a href="#python-config">Configuration</a>
+      <a href="#python-django">Django</a>
+      <a href="#python-flask">Flask</a>
+      <a href="#python-fastapi">FastAPI / Starlette</a>
+      <a href="#python-celery">Celery &amp; RQ</a>
+      <a href="#python-lambda">AWS Lambda</a>
+      <a href="#python-manual">Manual logging</a>
+    </div>
+    <div class="sb-group">
+      <p class="sb-label">React / JavaScript</p>
+      <a href="#javascript">Installation</a>
+      <a href="#javascript-init">Initialisation</a>
+      <a href="#javascript-react">ErrorBoundary</a>
+      <a href="#javascript-user">User context</a>
+      <a href="#javascript-config">Config options</a>
+    </div>
+    <div class="sb-group">
+      <p class="sb-label">React Native</p>
+      <a href="#react-native">Installation</a>
+      <a href="#rn-init">Initialisation</a>
+      <a href="#rn-react">ErrorBoundary</a>
+      <a href="#rn-user">User context</a>
+    </div>
+    <div class="sb-group">
+      <p class="sb-label">API reference</p>
+      <a href="#api">Ingest events</a>
+      <a href="#api-payload">Payload schema</a>
+      <a href="#api-errors">Error responses</a>
+    </div>
+    <div class="sb-group">
+      <p class="sb-label">API keys</p>
+      <a href="#api-keys">Write vs read keys</a>
+      <a href="#api-keys-when">When to create one</a>
+      <a href="#api-keys-manage">Managing keys</a>
+    </div>
+    <div class="sb-group">
+      <p class="sb-label">Notifications</p>
+      <a href="#slack">Slack integration</a>
+      <a href="#slack-create">Create webhook</a>
+      <a href="#slack-connect">Connect to ErrSight</a>
+      <a href="#slack-preferences">Alert preferences</a>
+    </div>
+    <div class="sb-group">
+      <p class="sb-label">Reference</p>
+      <a href="#config-ref">Ruby config</a>
+      <a href="#log-levels">Log levels</a>
+    </div>
+    <div class="sb-group">
+      <p class="sb-label">Source</p>
+      <a href="https://pypi.org/project/errsight/" target="_blank" rel="noopener">Python on PyPI ↗</a>
+      <a href="https://rubygems.org/gems/errsight" target="_blank" rel="noopener">Ruby on RubyGems ↗</a>
+    </div>
+  </aside>
+
+  <main class="docs-content">
+    <!-- ── Quick start ─────────────────────────────── -->
+    <section class="docs-section" id="quickstart">
+      <div class="section-label">00 · Quick start</div>
+      <h2 class="docs-h2">Up and running in <em>two minutes</em>.</h2>
+      <p>Pick your stack. Each path ends with ErrSight capturing every exception, logger call, and user context for you.</p>
+
+      <div class="docs-stack-grid">
+        <a href="#ruby" class="docs-stack-card">
+          <div class="sc-tag">Rb · gem</div>
+          <h4>Ruby on Rails</h4>
+          <p>Add one gem, create one initializer.</p>
+        </a>
+        <a href="#python" class="docs-stack-card">
+          <div class="sc-tag">Py · pip</div>
+          <h4>Python</h4>
+          <p>Django, Flask, FastAPI, Celery, RQ, Lambda — one SDK.</p>
+        </a>
+        <a href="#javascript" class="docs-stack-card">
+          <div class="sc-tag">JS · npm</div>
+          <h4>React / JavaScript</h4>
+          <p>npm install errsight, call init(), done.</p>
+        </a>
+        <a href="#react-native" class="docs-stack-card">
+          <div class="sc-tag">RN · npm</div>
+          <h4>React Native</h4>
+          <p>Drop-in native crash and promise rejection capture.</p>
+        </a>
+      </div>
+    </section>
+
+    <hr class="docs-rule">
+
+    <!-- ── Ruby / Rails ─────────────────────────────── -->
+    <section class="docs-section" id="ruby">
+      <div class="section-label">01 · Ruby / Rails</div>
+      <div class="docs-section-head">
+        <div class="docs-badge" style="color:#e0564c">Rb</div>
+        <h2 class="docs-h2">Ruby on <em>Rails</em>.</h2>
+      </div>
+
+      <h3 class="docs-h3">Installation</h3>
+      <p>Add to your <code class="inline">Gemfile</code>:</p>
+      <%= render "pages/code_block", language: "ruby", code: 'gem "errsight"' %>
+      <p>Then run:</p>
+      <%= render "pages/code_block", language: "sh", code: "bundle install" %>
+
+      <h3 class="docs-h3" id="ruby-config">Configuration</h3>
+      <p>Create <code class="inline">config/initializers/errsight.rb</code>:</p>
+      <%= render "pages/code_block", language: "ruby", code: <<~RUBY
+        Errsight.configure do |config|
+          config.api_key                = ENV["ERRSIGHT_API_KEY"]   # required
+          config.environment            = Rails.env                  # "production", "staging", etc.
+          config.host                   = ENV.fetch("ERRSIGHT_HOST", "https://errsight.com")
+          # Verbose log forwarding in development; quiet in production.
+          # In production, attach_to_rails_logger=true on a busy app
+          # will generate a very high volume of events fast.
+          config.attach_to_rails_logger = Rails.env.development?
+          config.min_level              = Rails.env.development? ? :debug : :warning
+
+          # Optional. Defaults shown:
+          # config.batch_size     = 10            # events per HTTP request
+          # config.flush_interval = 2             # background flush interval (seconds)
+          # config.max_queue_size = 1000          # drop events when queue exceeds this
+          # config.timeout        = 5             # HTTP open + read timeout (seconds)
+          # config.enabled        = true          # set false to disable per environment
+        end
+      RUBY
+      %>
+
+      <div class="docs-note">
+        <strong>What happens automatically (v0.1.3+):</strong>
+        <ul>
+          <li>Every unhandled Rails controller exception is captured with its full backtrace.</li>
+          <li>Every <code class="inline">Rails.logger</code> call is forwarded (respecting <code class="inline">min_level</code>).</li>
+          <li><strong>User context</strong> — <code class="inline">id</code>, <code class="inline">email</code>, <code class="inline">username</code> are pulled from the current Warden user (Devise, ActiveAdmin, any scope). <code class="inline">ip_address</code> comes from <code class="inline">request.remote_ip</code> even when no one is signed in.</li>
+          <li><strong>Tags</strong> (filterable in the UI) — <code class="inline">controller</code>, <code class="inline">action</code>, <code class="inline">request_method</code>, <code class="inline">status</code>, <code class="inline">ruby_version</code>, <code class="inline">rails_version</code>, <code class="inline">hostname</code>.</li>
+          <li><strong>Metadata</strong> — <code class="inline">path</code>, <code class="inline">full_path</code>, <code class="inline">format</code>, <code class="inline">duration</code>, <code class="inline">exception_class</code>, and filtered <code class="inline">params</code> (respects Rails' <code class="inline">filter_parameters</code>).</li>
+        </ul>
+      </div>
+
+      <h3 class="docs-h3" id="ruby-manual">Manual logging</h3>
+      <p>Use <code class="inline">Errsight.log</code> or <code class="inline">Errsight.capture_exception</code> anywhere in your app:</p>
+      <%= render "pages/code_block", language: "ruby", code: <<~RUBY
+        # Log at any level
+        Errsight.log(level: :info,    message: "User signed up", metadata: { plan: "pro" })
+        Errsight.log(level: :warning, message: "Slow query detected", metadata: { duration_ms: 850 })
+        Errsight.log(level: :error,   message: "Payment gateway timeout")
+
+        # Capture an exception object directly
+        begin
+          charge_card(user)
+        rescue Stripe::CardError => e
+          Errsight.capture_exception(e, metadata: { user_id: user.id, amount: 4900 })
+          raise
+        end
+      RUBY
+      %>
+
+      <h3 class="docs-h3" id="ruby-env">Environment variables</h3>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono-accent">ERRSIGHT_API_KEY</td>
+              <td>Your project API key (elp_…). Required.</td>
+            </tr>
+            <tr>
+              <td class="mono-accent">ERRSIGHT_HOST</td>
+              <td>API base URL. Default: <code class="inline">https://errsight.com</code></td>
+            </tr>
+            <tr>
+              <td class="mono-accent">ERRSIGHT_ENV</td>
+              <td>Environment name. Defaults to <code class="inline">Rails.env</code> when set via config block.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <hr class="docs-rule">
+
+    <!-- ── Python ─────────────────────────────────────── -->
+    <section class="docs-section" id="python">
+      <div class="section-label">02 · Python</div>
+      <div class="docs-section-head">
+        <div class="docs-badge" style="color:#3a7ebf">Py</div>
+        <h2 class="docs-h2">Python — <em>any framework</em>.</h2>
+      </div>
+
+      <p>One SDK, first-class integrations for Django, Flask, FastAPI / Starlette, Celery, RQ, and AWS Lambda. Zero runtime dependencies. <code class="inline">ContextVar</code>-isolated scopes so concurrent async requests never share state. Python 3.8+.</p>
+
+      <h3 class="docs-h3">Installation</h3>
+      <p>The base SDK has no third-party dependencies:</p>
+      <%= render "pages/code_block", language: "sh", code: "pip install errsight" %>
+      <p>Or install with the extras for your framework — they pin the right version range:</p>
+      <%= render "pages/code_block", language: "sh", code: <<~SH
+        pip install 'errsight[django]'
+        pip install 'errsight[flask]'
+        pip install 'errsight[fastapi]'
+        pip install 'errsight[celery]'
+        pip install 'errsight[rq]'
+      SH
+      %>
+
+      <h3 class="docs-h3" id="python-config">Configuration</h3>
+      <p>Call <code class="inline">errsight.init()</code> once at process boot:</p>
+      <%= render "pages/code_block", language: "python", code: <<~PY
+        import os
+        import errsight
+
+        errsight.init(
+            api_key=os.environ["ERRSIGHT_API_KEY"],   # required
+            environment="production",                  # default: $ERRSIGHT_ENV or "production"
+            host="https://errsight.com",               # default: $ERRSIGHT_HOST
+            release=os.environ.get("GIT_SHA"),         # default: $ERRSIGHT_RELEASE
+            min_level="warning",                       # debug|info|warning|error|fatal
+            # Optional. Defaults shown:
+            # batch_size=10,             # events per HTTP request
+            # flush_interval=2.0,        # background flush cadence (seconds)
+            # max_queue_size=1_000,      # drop events beyond this
+            # timeout=5.0,               # HTTP timeout (seconds)
+            # before_send=None,          # callable(event) -> event | None
+            # attach_to_logging=False,   # auto-attach logging.Handler
+        )
+      PY
+      %>
+
+      <div class="docs-note">
+        <strong>What happens automatically:</strong>
+        <ul>
+          <li><code class="inline">errsight.init()</code> registers an <code class="inline">atexit</code> handler that drains the queue before the process exits — no manual <code class="inline">errsight.close()</code> required.</li>
+          <li>Background flush thread sends events in batches of <code class="inline">batch_size</code> every <code class="inline">flush_interval</code> seconds.</li>
+          <li>Fork-safe via <code class="inline">os.register_at_fork</code> — queued events are not silently lost under gunicorn / uWSGI cluster mode.</li>
+          <li>Structured stack frames with ±5 lines of source context for in-app frames, plus the full <code class="inline">__cause__</code> / <code class="inline">__context__</code> chain.</li>
+        </ul>
+      </div>
+
+      <h3 class="docs-h3" id="python-django">Django</h3>
+      <p>Add the middleware (works with both sync and async views):</p>
+      <%= render "pages/code_block", language: "python", code: <<~PY
+        # settings.py
+        MIDDLEWARE = [
+            "django.contrib.sessions.middleware.SessionMiddleware",
+            "django.contrib.auth.middleware.AuthenticationMiddleware",
+            "errsight.django.ErrsightMiddleware",   # after AuthenticationMiddleware
+            # ...
+        ]
+      PY
+      %>
+      <p>Then call <code class="inline">errsight.init()</code> from <code class="inline">wsgi.py</code>, <code class="inline">asgi.py</code>, or an <code class="inline">AppConfig.ready()</code> method. The middleware pushes a per-request scope tagged with <code class="inline">request_method</code>, <code class="inline">path</code>, and <code class="inline">view</code>; populates user from <code class="inline">request.user</code>; and captures view exceptions via <code class="inline">process_exception</code> with the request's path, method, query params, and view name.</p>
+
+      <h3 class="docs-h3" id="python-flask">Flask</h3>
+      <%= render "pages/code_block", language: "python", code: <<~PY
+        from flask import Flask
+        import errsight
+        from errsight.flask import ErrsightFlask
+
+        errsight.init(api_key=os.environ["ERRSIGHT_API_KEY"])
+        app = Flask(__name__)
+        ErrsightFlask(app)   # or: ext = ErrsightFlask(); ext.init_app(app)
+      PY
+      %>
+      <p>Reads user from <code class="inline">flask_login.current_user</code> if installed, otherwise from <code class="inline">flask.g.user</code>. Register <code class="inline">ErrsightFlask</code> <em>after</em> any <code class="inline">before_request</code> hook that populates <code class="inline">g.user</code>. <code class="inline">abort(404)</code> and other <code class="inline">HTTPException</code> subclasses are filtered out — they're routine app flow, not errors.</p>
+
+      <h3 class="docs-h3" id="python-fastapi">FastAPI / Starlette</h3>
+      <%= render "pages/code_block", language: "python", code: <<~PY
+        from fastapi import FastAPI
+        from errsight.fastapi import ErrsightMiddleware
+        import errsight
+
+        errsight.init(api_key=os.environ["ERRSIGHT_API_KEY"])
+        app = FastAPI()
+        app.add_middleware(ErrsightMiddleware)
+      PY
+      %>
+      <p>Pure ASGI middleware — does not break streaming responses the way <code class="inline">BaseHTTPMiddleware</code> can. Per-request scope is <code class="inline">contextvars</code>-isolated, so concurrent async requests on a single event-loop thread each see their own user / tags. User is late-bound from <code class="inline">scope["user"]</code> at capture time, so Starlette's <code class="inline">AuthenticationMiddleware</code> still wins. The same module is importable as <code class="inline">errsight.starlette</code> for non-FastAPI Starlette apps.</p>
+
+      <h3 class="docs-h3" id="python-celery">Celery &amp; RQ</h3>
+      <p><strong>Celery</strong> — one call wires up all four lifecycle signals:</p>
+      <%= render "pages/code_block", language: "python", code: <<~PY
+        import errsight
+        from errsight.celery import install
+
+        errsight.init(api_key=os.environ["ERRSIGHT_API_KEY"])
+        install()
+      PY
+      %>
+      <p>Tasks enqueued from inside <code class="inline">with errsight.with_scope():</code> carry the publisher's user / tags / breadcrumbs through <code class="inline">task.request.headers["errsight"]</code> to the worker, which rehydrates them on <code class="inline">task_prerun</code>. Failures captured on <code class="inline">task_failure</code> include task name, id, args, kwargs, and retry count.</p>
+
+      <p><strong>RQ</strong> — drop-in Worker subclass:</p>
+      <%= render "pages/code_block", language: "python", code: <<~PY
+        from rq import Queue
+        from errsight.rq import ErrsightWorker
+        import errsight
+
+        errsight.init(api_key=os.environ["ERRSIGHT_API_KEY"])
+        worker = ErrsightWorker([Queue()])
+        worker.work()
+      PY
+      %>
+      <p>For cross-process scope, pass it explicitly when enqueueing (RQ has no publisher-side signal):</p>
+      <%= render "pages/code_block", language: "python", code: <<~PY
+        job = queue.enqueue(
+            send_email, user.email,
+            meta={"errsight": errsight.hub.current_scope().to_dict()},
+        )
+      PY
+      %>
+
+      <h3 class="docs-h3" id="python-lambda">AWS Lambda</h3>
+      <%= render "pages/code_block", language: "python", code: <<~PY
+        import errsight
+        from errsight.aws_lambda import errsight_lambda
+
+        errsight.init(api_key=os.environ["ERRSIGHT_API_KEY"])
+
+        @errsight_lambda
+        def lambda_handler(event, context):
+            ...
+      PY
+      %>
+      <p>Per-invocation scope tagged with <code class="inline">lambda_function</code>, <code class="inline">lambda_version</code>, and <code class="inline">aws_request_id</code>. Captures unhandled exceptions with full context including <code class="inline">remaining_time_ms</code> (useful for diagnosing timeouts), then <strong>synchronously flushes the transport</strong> before returning so events aren't lost when Lambda freezes the process between invocations. Pass <code class="inline">@errsight_lambda(include_event=True)</code> to attach a 4KB-truncated form of the event payload.</p>
+
+      <h3 class="docs-h3" id="python-manual">Manual logging and capture</h3>
+      <%= render "pages/code_block", language: "python", code: <<~PY
+        # Log at any level
+        errsight.log(level="info",    message="user signed up", metadata={"plan": "pro"})
+        errsight.log(level="warning", message="slow query",     metadata={"duration_ms": 850})
+        errsight.log(level="error",   message="gateway timeout")
+
+        # Capture an exception with optional metadata, tags, or user override
+        try:
+            charge_card(user)
+        except StripeCardError as exc:
+            errsight.capture_exception(exc, metadata={"user_id": user.id, "amount": 4900})
+            raise
+
+        # Attach context for a block of work
+        with errsight.with_scope():
+            errsight.set_user({"id": user.id, "email": user.email})
+            errsight.set_tag("transaction_id", txn.id)
+            errsight.add_breadcrumb(category="ui", message="clicked checkout")
+            run_pipeline()
+
+        # Forward all logger.error / logger.exception calls automatically
+        import logging
+        logging.getLogger().addHandler(errsight.LoggingHandler(level=logging.WARNING))
+      PY
+      %>
+
+      <h3 class="docs-h3">Environment variables</h3>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono-accent">ERRSIGHT_API_KEY</td>
+              <td>Project API key (elp_…). Required unless passed to <code class="inline">init()</code> directly.</td>
+            </tr>
+            <tr>
+              <td class="mono-accent">ERRSIGHT_ENV</td>
+              <td>Environment tag attached to events. Default <code class="inline">production</code>.</td>
+            </tr>
+            <tr>
+              <td class="mono-accent">ERRSIGHT_HOST</td>
+              <td>API base URL. Default <code class="inline">https://errsight.com</code>.</td>
+            </tr>
+            <tr>
+              <td class="mono-accent">ERRSIGHT_RELEASE</td>
+              <td>Release identifier (commit SHA, semantic version). Attached to every event.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="margin-top: 16px;">
+        Full source on
+        <a href="https://pypi.org/project/errsight/" target="_blank" rel="noopener">PyPI</a>.
+      </p>
+    </section>
+
+    <hr class="docs-rule">
+
+    <!-- ── React / JavaScript ─────────────────────────── -->
+    <section class="docs-section" id="javascript">
+      <div class="section-label">03 · React / JavaScript</div>
+      <div class="docs-section-head">
+        <div class="docs-badge" style="color:#d4ad1f">JS</div>
+        <h2 class="docs-h2">React / <em>JavaScript</em>.</h2>
+      </div>
+
+      <h3 class="docs-h3">Installation</h3>
+      <p>Install the <code class="inline">errsight</code> npm package:</p>
+      <%= render "pages/code_block", language: "sh", code: <<~SH
+        npm install errsight
+        # or
+        yarn add errsight
+      SH
+      %>
+
+      <h3 class="docs-h3" id="javascript-init">Initialisation</h3>
+      <p>Call <code class="inline">Errsight.init()</code> once at the top of your entry point (<code class="inline">main.jsx</code> or <code class="inline">index.js</code>), before anything else renders:</p>
+      <%= render "pages/code_block", language: "js", code: <<~JS
+        import Errsight from "errsight"
+
+        Errsight.init({
+          apiKey:      "elp_your_api_key_here",          // required
+          environment: import.meta.env.MODE,              // "production" | "development"
+          minLevel:    "error",                            // "debug" | "info" | "warning" | "error" | "fatal"
+
+          // Optional. Defaults shown:
+          // captureGlobalErrors: true,                    // attach window.onerror + unhandledrejection
+          // batchSize:           10,                      // flush when queue reaches this size
+          // flushInterval:       2000,                    // background flush interval in ms (0 disables timer)
+        })
+      JS
+      %>
+
+      <h3 class="docs-h3" id="javascript-react">React ErrorBoundary</h3>
+      <p>Wrap your component tree to catch render-phase errors:</p>
+      <%= render "pages/code_block", language: "jsx", code: <<~JSX
+        import { createRoot } from "react-dom/client"
+        import { ErrorBoundary } from "errsight/react"
+        import App from "./App"
+
+        createRoot(document.getElementById("root")).render(
+          <ErrorBoundary
+            fallback={({ error, reset }) => (
+              <div>
+                <p>Something went wrong: {error.message}</p>
+                <button onClick={reset}>Try again</button>
+              </div>
+            )}
+          >
+            <App />
+          </ErrorBoundary>
+        )
+      JSX
+      %>
+      <p>The <code class="inline">fallback</code> prop accepts a React element or a render-prop function with <code class="inline">{ error, reset }</code>. Omitting it silently hides the crashed subtree.</p>
+
+      <h3 class="docs-h3" id="javascript-user">User context</h3>
+      <p>Attach the current user after sign-in so every subsequent event carries their ID and email:</p>
+      <%= render "pages/code_block", language: "js", code: <<~JS
+        // After sign-in
+        Errsight.setUser({ id: currentUser.id, email: currentUser.email })
+
+        // After sign-out
+        Errsight.clearUser()
+      JS
+      %>
+
+      <h3 class="docs-h3">Manual logging</h3>
+      <%= render "pages/code_block", language: "js", code: <<~JS
+        Errsight.debug("Rendering checkout step 2")
+        Errsight.info("User added item to cart", { metadata: { productId: 99 } })
+        Errsight.warn("API response slow", { metadata: { duration: 2800 } })
+        Errsight.error("Payment failed", { metadata: { orderId: 42, code: "card_declined" } })
+
+        // Pass an Error object to capture its stack trace automatically
+        try {
+          await submitOrder()
+        } catch (err) {
+          Errsight.captureError(err, { metadata: { orderId: 42 } })
+        }
+      JS
+      %>
+
+      <h3 class="docs-h3" id="javascript-config">Configuration options</h3>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Option</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% [
+              ["apiKey",              "—",                         "Required. Your project API key (elp_…)."],
+              ["environment",         "\"production\"",              "Environment tag attached to every event."],
+              ["host",                "\"https://errsight.com\"",    "API base URL. Override for self-hosting."],
+              ["minLevel",            "\"error\"",                   "Minimum level to send. Options: debug | info | warning | error | fatal."],
+              ["captureGlobalErrors", "true",                        "Attach window.onerror and unhandledrejection handlers."],
+              ["batchSize",           "10",                          "Flush immediately when queue reaches this size."],
+              ["flushInterval",       "2000",                        "Flush interval in milliseconds (0 = timer disabled)."],
+            ].each do |opt, default, desc| %>
+              <tr>
+                <td class="mono-accent"><%= opt %></td>
+                <td class="dim"><%= default %></td>
+                <td><%= desc %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <hr class="docs-rule">
+
+    <!-- ── React Native ─────────────────────────────── -->
+    <section class="docs-section" id="react-native">
+      <div class="section-label">04 · React Native</div>
+      <div class="docs-section-head">
+        <div class="docs-badge" style="color:#5ea8ff">RN</div>
+        <h2 class="docs-h2">React <em>Native</em>.</h2>
+      </div>
+
+      <h3 class="docs-h3">Installation</h3>
+      <p>Install the <code class="inline">errsight-rn</code> package:</p>
+      <%= render "pages/code_block", language: "sh", code: <<~SH
+        npm install errsight-rn
+        # or
+        yarn add errsight-rn
+      SH
+      %>
+
+      <h3 class="docs-h3" id="rn-init">Initialisation</h3>
+      <p>Call <code class="inline">init()</code> once at your app entry point (<code class="inline">App.tsx</code>):</p>
+      <%= render "pages/code_block", language: "tsx", code: <<~TSX
+        import { init } from "errsight-rn"
+
+        init({
+          apiKey:      "elp_your_api_key_here",          // required
+          environment: "production",                      // default
+          minLevel:    "error",                            // "debug" | "info" | "warning" | "error" | "fatal"
+
+          // Optional. Defaults shown:
+          // captureGlobalErrors: true,                    // capture ErrorUtils crashes + unhandled rejections
+          // batchSize:           10,                      // flush when queue reaches this size
+          // flushInterval:       2000,                    // background flush interval in ms (0 disables timer)
+        })
+      TSX
+      %>
+
+      <div class="docs-note">
+        <strong>What happens automatically:</strong>
+        <ul>
+          <li>Native crashes are captured via React Native's <code class="inline">ErrorUtils</code> (the red screen still appears).</li>
+          <li>Unhandled promise rejections are tracked.</li>
+          <li>Events are flushed when the app moves to background via <code class="inline">AppState</code>.</li>
+          <li>Device context (platform, OS, OS version) is attached to every event.</li>
+        </ul>
+      </div>
+
+      <h3 class="docs-h3" id="rn-react">React ErrorBoundary</h3>
+      <p>Wrap your component tree to catch render-phase errors:</p>
+      <%= render "pages/code_block", language: "tsx", code: <<~TSX
+        import { ErrsightProvider, ErrorBoundary } from "errsight-rn/react"
+
+        export default function App() {
+          return (
+            <ErrsightProvider>
+              <ErrorBoundary fallback={<Text>Something went wrong.</Text>}>
+                <MainScreen />
+              </ErrorBoundary>
+            </ErrsightProvider>
+          )
+        }
+      TSX
+      %>
+
+      <h3 class="docs-h3" id="rn-user">User context</h3>
+      <p>Attach the current user so every event carries their info:</p>
+      <%= render "pages/code_block", language: "tsx", code: <<~TSX
+        import { getClient } from "errsight-rn"
+
+        const client = getClient()
+
+        // After sign-in
+        client?.setUser({ id: currentUser.id, email: currentUser.email })
+
+        // After sign-out
+        client?.clearUser()
+      TSX
+      %>
+
+      <h3 class="docs-h3">Manual logging</h3>
+      <%= render "pages/code_block", language: "tsx", code: <<~TSX
+        import { getClient } from "errsight-rn"
+
+        const client = getClient()
+
+        client?.debug("Cache miss", { metadata: { key: "user:42" } })
+        client?.info("User signed in")
+        client?.warn("Deprecated API called")
+        client?.error("Payment failed", { metadata: { orderId: "123" } })
+
+        // Capture an Error object with its stack trace
+        try {
+          await riskyOperation()
+        } catch (err) {
+          client?.captureError(err, { metadata: { screen: "checkout" } })
+        }
+      TSX
+      %>
+    </section>
+
+    <hr class="docs-rule">
+
+    <!-- ── REST API ─────────────────────────────── -->
+    <section class="docs-section" id="api">
+      <div class="section-label">04 · REST API</div>
+      <div class="docs-section-head">
+        <div class="docs-badge" style="color:var(--accent); font-size: 13px;">API</div>
+        <h2 class="docs-h2">REST <em>reference</em>.</h2>
+      </div>
+      <p>If you're using a language without an official SDK, you can POST events directly. CORS is enabled — browser clients work out of the box.</p>
+
+      <h3 class="docs-h3">Ingest events</h3>
+      <div style="margin: 10px 0 18px;">
+        <span class="method-chip">POST</span>
+        <code class="endpoint-code">/api/v1/events</code>
+      </div>
+
+      <p>Authentication via header:</p>
+      <%= render "pages/code_block", language: "sh", code: "X-API-Key: elp_your_api_key_here\n# or\nAuthorization: Bearer elp_your_api_key_here" %>
+
+      <p>Send a single event:</p>
+      <%= render "pages/code_block", language: "sh", code: <<~SH
+        curl -X POST https://errsight.com/api/v1/events \\
+          -H "Content-Type: application/json" \\
+          -H "X-API-Key: elp_your_key" \\
+          -d '{
+            "level":       "error",
+            "message":     "Payment gateway timeout",
+            "environment": "production",
+            "occurred_at": "2026-04-13T08:00:00.000Z",
+            "metadata": {
+              "user_id": 42,
+              "order_id": 1234
+            }
+          }'
+      SH
+      %>
+
+      <p>Or send a batch (up to 100 events):</p>
+      <%= render "pages/code_block", language: "sh", code: <<~SH
+        curl -X POST https://errsight.com/api/v1/events \\
+          -H "Content-Type: application/json" \\
+          -H "X-API-Key: elp_your_key" \\
+          -d '[
+            { "level": "info",  "message": "User signed in", "occurred_at": "2026-04-13T08:00:00Z" },
+            { "level": "error", "message": "Card declined",  "occurred_at": "2026-04-13T08:00:01Z" }
+          ]'
+      SH
+      %>
+
+      <p><strong>Response:</strong></p>
+      <%= render "pages/code_block", language: "json", code: <<~JSON
+        HTTP/1.1 202 Accepted
+        { "status": "accepted", "queued": 2 }
+      JSON
+      %>
+
+      <h3 class="docs-h3" id="api-payload">Payload schema</h3>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Required</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% [
+              ["level",       "string",   "yes", "debug | info | warning | error | fatal"],
+              ["message",     "string",   "yes", "Human-readable log message. Max 10,000 chars."],
+              ["environment", "string",   "no",  "Defaults to \"production\" if omitted."],
+              ["occurred_at", "ISO 8601", "no",  "Event timestamp. Defaults to server receive time."],
+              ["backtrace",   "string",   "no",  "Stack trace as a newline-separated string."],
+              ["metadata",    "object",   "no",  "Arbitrary key-value pairs. Max 50 top-level keys."],
+            ].each do |field, type, req, desc| %>
+              <tr>
+                <td class="mono-accent"><%= field %></td>
+                <td class="dim"><%= type %></td>
+                <td><span class="<%= req == "yes" ? "tag-yes" : "tag-no" %>"><%= req %></span></td>
+                <td><%= desc %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="docs-h3" id="api-errors">Error responses</h3>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="tag-warn">401</span></td><td>Invalid or missing API key.</td></tr>
+            <tr><td><span class="tag-warn">400</span></td><td>Invalid JSON body.</td></tr>
+            <tr><td><span class="tag-warn">413</span></td><td>Payload too large (max 512 KB).</td></tr>
+            <tr><td><span class="tag-warn">422</span></td><td>Batch exceeds 100 events.</td></tr>
+            <tr><td><span class="tag-warn">429</span></td><td>Rate limit exceeded, or ingestion paused for this project.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <hr class="docs-rule">
+
+    <!-- ── API keys ─────────────────────────────── -->
+    <section class="docs-section" id="api-keys">
+      <div class="section-label">05 · API keys</div>
+      <div class="docs-section-head">
+        <div class="docs-badge" style="color:var(--accent); font-size: 13px;">Key</div>
+        <h2 class="docs-h2">Write vs <em>read</em> keys.</h2>
+      </div>
+      <p>Every project ships with a default <strong>write</strong> key — that's the one on your project's Overview, the one you drop into your app's initializer. You can also create additional keys with a <strong>read</strong> scope on the <strong>Manage keys</strong> page. Here's the difference and when you'd need one.</p>
+
+      <div class="docs-note">
+        <strong>Two doors, not one.</strong>
+        <ul>
+          <li><strong>Inbound door (write):</strong> your app sends errors <em>to</em> ErrSight.</li>
+          <li><strong>Outbound door (read):</strong> something pulls errors <em>back out</em> of ErrSight.</li>
+        </ul>
+        You don't want the same key opening both doors — and most projects only ever need the first one.
+      </div>
+
+      <h3 class="docs-h3">Write keys</h3>
+      <p>Prefix: <code class="inline">elp_…</code>. Used by your app (or any service) to ingest events via <code class="inline">POST /api/v1/events</code>. This is the key you put in <code class="inline">config/initializers/errsight.rb</code> or <code class="inline">Errsight.init({ apiKey })</code>. It can send events — nothing else.</p>
+
+      <h3 class="docs-h3">Read keys</h3>
+      <p>Prefix: <code class="inline">elr_…</code>. Grants access to the read endpoints: <code class="inline">GET /api/v1/events</code> and <code class="inline">GET /api/v1/issues/:fingerprint</code>. Use these when something <em>outside</em> ErrSight needs to query your error data.</p>
+
+      <h3 class="docs-h3" id="api-keys-when">When do you actually need a read key?</h3>
+      <p>You don't need one by default. Create one only when an external tool needs to read your events. Typical cases:</p>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Scenario</th>
+              <th>Key scope</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Rails / JS / React Native SDK ingesting errors in production</td>
+              <td><span class="tag-yes">write</span></td>
+            </tr>
+            <tr>
+              <td>CI job that fails the build if new errors appear after a deploy</td>
+              <td><span class="tag-yes">read</span></td>
+            </tr>
+            <tr>
+              <td>Slack bot posting "top 5 errors today" on a schedule</td>
+              <td><span class="tag-yes">read</span></td>
+            </tr>
+            <tr>
+              <td>Custom Grafana / Metabase dashboard pulling metrics</td>
+              <td><span class="tag-yes">read</span></td>
+            </tr>
+            <tr>
+              <td>Browsing the ErrSight web UI</td>
+              <td class="dim">neither — the UI uses your login session</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="docs-note">
+        <strong>The ErrSight dashboard itself never uses an API key.</strong> The web UI reads from its own database through your logged-in session. API keys only matter for traffic between <em>other</em> systems and ErrSight's public API.
+      </div>
+
+      <h3 class="docs-h3">Why split the scopes?</h3>
+      <p>Because a leaked key should have the smallest possible blast radius:</p>
+      <ul>
+        <li><strong>Leaked write key</strong> — an attacker can flood your account with fake errors, drowning real issues in noise and filling your storage. Bad, but they can't <em>read</em> anything you've stored.</li>
+        <li><strong>Leaked read key</strong> — an attacker can read every error message, stack trace, and user identifier you've ever logged. Much worse.</li>
+      </ul>
+      <p>Shipping a write-only key with your deployed app means even if the binary, bundle, or committed <code class="inline">.env</code> gets out, your stored data isn't exposed. Read keys stay in fewer, more trusted places (a CI secret, a dashboard's server-side config).</p>
+
+      <h3 class="docs-h3" id="api-keys-manage">Managing keys</h3>
+      <p>From a project's Overview, click <strong>Manage keys</strong>. You can:</p>
+      <ul>
+        <li>Create additional keys with either scope, each with a name for bookkeeping (e.g. <code class="inline">staging-backend</code>, <code class="inline">ci-deploy-check</code>).</li>
+        <li>Revoke any key you've created. Revoked keys stop working immediately; existing events stay intact.</li>
+        <li>See when each key was last used, so dormant keys are easy to spot.</li>
+      </ul>
+      <div class="docs-note">
+        <strong>The default ingestion key is protected.</strong> You can't revoke it from Manage keys — rotate it from the project's Overview instead, which issues a new value and invalidates the old one in a single step.
+      </div>
+
+      <h3 class="docs-h3">Using a read key</h3>
+      <p>Authentication works the same way as ingestion — just use the <code class="inline">elr_…</code> token:</p>
+      <%= render "pages/code_block", language: "sh", code: <<~SH
+        # List recent events
+        curl https://errsight.com/api/v1/events \\
+          -H "X-API-Key: elr_your_read_key"
+
+        # Fetch a specific issue by fingerprint
+        curl https://errsight.com/api/v1/issues/abc123def456 \\
+          -H "X-API-Key: elr_your_read_key"
+      SH
+      %>
+    </section>
+
+    <hr class="docs-rule">
+
+    <!-- ── Slack notifications ─────────────────────────────── -->
+    <section class="docs-section" id="slack">
+      <div class="section-label">05 · Notifications</div>
+      <div class="docs-section-head">
+        <div class="docs-badge" style="color:#6441a5">Sl</div>
+        <h2 class="docs-h2">Slack <em>notifications</em>.</h2>
+      </div>
+      <p>Get error events posted into a Slack channel — either instantly or as an hourly digest.</p>
+
+      <div class="docs-note">
+        <strong>How it works:</strong>
+        <ul>
+          <li>One Slack incoming webhook per organization — it points to a specific channel you choose in Slack.</li>
+          <li>Each member opts in independently and picks their own severity threshold and frequency.</li>
+          <li>When at least one opted-in member's threshold is met, ErrSight posts once to the channel (no duplicate messages per member).</li>
+        </ul>
+      </div>
+
+      <h3 class="docs-h3" id="slack-create">1. Create a Slack incoming webhook</h3>
+      <ol>
+        <li>Go to <a href="https://api.slack.com/apps" target="_blank" rel="noopener">api.slack.com/apps</a> → <strong>Create New App</strong> → <strong>From scratch</strong>.</li>
+        <li>Give it a name (e.g. <code class="inline">ErrSight</code>), pick your workspace, click <strong>Create App</strong>.</li>
+        <li>In the left sidebar, open <strong>Incoming Webhooks</strong> and toggle <strong>Activate Incoming Webhooks</strong> to <em>On</em>.</li>
+        <li>Scroll down, click <strong>Add New Webhook to Workspace</strong>, pick the destination channel (e.g. <code class="inline">#alerts</code>), then <strong>Allow</strong>.</li>
+        <li>Copy the webhook URL. It looks like:</li>
+      </ol>
+      <%= render "pages/code_block", language: "sh", code: "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX" %>
+
+      <h3 class="docs-h3" id="slack-connect">2. Connect it to ErrSight</h3>
+      <ol>
+        <li>Sign in to ErrSight as an <strong>org admin</strong>.</li>
+        <li>From the dashboard, open your organization, then click <strong>Alerts</strong> in the top-right.</li>
+        <li>In the <strong>Slack Integration</strong> card, paste the webhook URL and click <strong>Save Webhook</strong>.</li>
+        <li>Click <strong>Send Test Message</strong> — a confirmation post should appear in Slack within a few seconds.</li>
+      </ol>
+
+      <div class="docs-note">
+        <strong>Keep the webhook URL private.</strong> Anyone with it can post to your channel. If it leaks, rotate it from the same Slack app page.
+      </div>
+
+      <h3 class="docs-h3" id="slack-preferences">3. Configure alert preferences</h3>
+      <p>Each member configures their own delivery on the same <strong>Alerts</strong> page:</p>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Setting</th>
+              <th>Options</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono-accent">Slack Alerts</td>
+              <td class="dim">on / off</td>
+              <td>Opt this member in or out of Slack delivery.</td>
+            </tr>
+            <tr>
+              <td class="mono-accent">Minimum Severity</td>
+              <td class="dim">debug → fatal</td>
+              <td>Only events at or above this level trigger a post.</td>
+            </tr>
+            <tr>
+              <td class="mono-accent">Frequency</td>
+              <td class="dim">immediate / hourly</td>
+              <td>Post per-event, or batch into an hourly digest.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="docs-h3">Per-project overrides</h3>
+      <p>Under <strong>Per-Project Overrides</strong>, use the <strong>Slack</strong> / <strong>Mute Slack</strong> button next to a project to toggle that project independently of your default.</p>
+
+      <h3 class="docs-h3">Verify end-to-end</h3>
+      <p>Post a test event from any shell to confirm the full pipeline — ingestion, queue, and Slack delivery:</p>
+      <%= render "pages/code_block", language: "sh", code: <<~SH
+        curl -X POST https://errsight.com/api/v1/events \\
+          -H "Content-Type: application/json" \\
+          -H "X-API-Key: elp_your_key" \\
+          -d '{
+            "level":       "error",
+            "message":     "Slack integration test",
+            "environment": "production"
+          }'
+      SH
+      %>
+      <p>The message lands in Slack a few seconds after ErrSight accepts the event.</p>
+
+      <h3 class="docs-h3">Troubleshooting</h3>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Symptom</th>
+              <th>Likely cause</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Test message says "webhook did not respond successfully"</td>
+              <td>URL is wrong, or the Slack app was removed from the channel. Re-copy the URL from Slack and save again.</td>
+            </tr>
+            <tr>
+              <td>Events arrive in ErrSight but nothing posts to Slack</td>
+              <td>No member has <code class="inline">Slack Alerts</code> enabled at a severity that matches the event level.</td>
+            </tr>
+            <tr>
+              <td>Slack toggle is disabled on the Alerts page</td>
+              <td>Your org admin hasn't saved a webhook URL yet.</td>
+            </tr>
+            <tr>
+              <td>Hourly digest didn't post</td>
+              <td>Digest posts only when at least one event above your <code class="inline">Minimum Severity</code> occurred in that hour.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <hr class="docs-rule">
+
+    <!-- ── Config reference ─────────────────────────────── -->
+    <section class="docs-section" id="config-ref">
+      <div class="section-label">05 · Reference</div>
+      <h2 class="docs-h2">Ruby SDK <em>config</em>.</h2>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Option</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% [
+              ["api_key",                "ENV[\"ERRSIGHT_API_KEY\"]",   "Required. Your project API key."],
+              ["environment",            "\"production\"",                "Environment tag on every event."],
+              ["host",                   "\"https://errsight.com\"",      "API base URL."],
+              ["min_level",              ":warning",                      "Minimum level to forward. :debug sends everything."],
+              ["batch_size",             "10",                             "Number of events per HTTP request."],
+              ["flush_interval",         "2",                              "Background flush interval in seconds."],
+              ["max_queue_size",         "1000",                           "Drop events when the queue exceeds this size."],
+              ["timeout",                "5",                              "HTTP open + read timeout in seconds."],
+              ["shutdown_timeout",       "5",                              "Seconds to wait for the flush thread to drain on process shutdown."],
+              ["attach_to_rails_logger", "false",                          "Broadcast all Rails.logger calls to Errsight (also respects min_level). Off by default to avoid log-volume blowups; opt in for development."],
+              ["before_send",            "nil",                            "Optional callable; receives the event hash, returns it (possibly modified) to send, or nil to drop. PII scrubbing hook."],
+              ["breadcrumbs_active_record", "true",                        "Auto-collect SQL queries as DB-category breadcrumbs (Rails only)."],
+              ["breadcrumbs_active_record_capture_binds", "false",         "Include bind values in SQL breadcrumbs. Off by default — bind values often carry PII."],
+              ["enabled",                "true",                           "Set to false to disable in specific environments."],
+            ].each do |opt, default, desc| %>
+              <tr>
+                <td class="mono-accent"><%= opt %></td>
+                <td class="dim"><%= default %></td>
+                <td><%= desc %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="docs-section" id="log-levels">
+      <h2 class="docs-h2">Log <em>levels</em>.</h2>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Level</th>
+              <th>Ruby</th>
+              <th>JavaScript</th>
+              <th>When to use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="dim">debug</td>     <td class="dim">:debug</td>    <td class="dim">"debug"</td>    <td>Fine-grained diagnostic info.</td></tr>
+            <tr><td class="mono">info</td>     <td class="mono">:info</td>    <td class="mono">"info"</td>    <td>Normal application events.</td></tr>
+            <tr><td><span class="tag-warn">warning</span></td><td class="mono">:warning</td><td class="mono">"warning"</td><td>Recoverable issues worth watching.</td></tr>
+            <tr><td class="mono-accent">error</td><td class="mono">:error</td>    <td class="mono">"error"</td>    <td>Errors that affect functionality.</td></tr>
+            <tr><td class="mono-accent" style="font-weight:700">fatal</td><td class="mono">:fatal</td>    <td class="mono">"fatal"</td>    <td>Critical failures. App may be unusable.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="container">
+    <div class="foot-inner">
+      <div class="foot-col">
+        <a class="brand" href="/">
+          <%= image_tag "errsight-wordmark-light.svg", alt: "ErrSight", class: "brand-logo", height: 28 %>
+        </a>
+        <p class="foot-about">Lightweight error tracking &amp; log management for teams that ship more than they sleep.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <%= link_to "Features", "/#features" %>
+          <%= link_to "Integrations", integrations_path %>
+      </div>
+      <div class="foot-col">
+        <h4>Developers</h4>
+        <%= link_to "Documentation", docs_path %>
+        <%= link_to "Ruby / Rails SDK", docs_path(anchor: "ruby") %>
+        <%= link_to "React / JS SDK", docs_path(anchor: "javascript") %>
+        <%= link_to "REST API", docs_path(anchor: "api") %>
+        <%= link_to "Slack integration", docs_path(anchor: "slack") %>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <% if user_signed_in? %>
+          <%= link_to "Dashboard", authenticated_root_path %>
+        <% else %>
+          <%= link_to "Sign in", new_user_session_path %>
+          <% if public_signup_allowed? %>
+            <%= link_to "Sign up", new_user_registration_path %>
+          <% end %>
+        <% end %>
+        <%= link_to "Support", support_path %>
+        <%= link_to "Privacy", privacy_path %>
+        <%= link_to "Terms", terms_path %>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© <%= Date.current.year %> ErrSight.</span>
+      <span>status: <span style="color: var(--ok)">● all systems operational</span></span>
+    </div>
+  </div>
+</footer>
