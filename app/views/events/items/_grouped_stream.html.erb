@@ -1,0 +1,25 @@
+<%# Layout C: list grouped into time buckets with sticky subheaders. Locals: mode %>
+<% rows    = mode == :issues ? @groups : @events %>
+<% buckets = items_time_buckets(rows, mode) %>
+<div class="es-tablewrap <%= mode == :issues ? 'es-itable' : 'es-etable' %>"
+     style="<%= "--iss-grid: #{items_issue_grid};" if mode == :issues %>">
+  <% if rows.blank? %>
+    <%= render "events/items/empty", mode: mode %>
+  <% else %>
+    <% buckets.each do |label, band| %>
+      <% next if band.empty? %>
+      <div class="es-group-head">
+        <span class="es-group-title"><%= label %></span>
+        <span class="es-group-count"><%= band.size %></span>
+        <span class="es-group-line"></span>
+      </div>
+      <% band.each do |row| %>
+        <% if mode == :issues %>
+          <%= render "events/items/issue_row", group: row %>
+        <% else %>
+          <%= render "events/items/event_row", event: row %>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+</div>

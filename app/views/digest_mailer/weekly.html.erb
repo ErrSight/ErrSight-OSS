@@ -1,0 +1,102 @@
+<%
+  level_color = ->(lvl) {
+    case lvl
+    when 4, 3 then "#ff5a3c"
+    when 2    then "#c79528"
+    else           "#8f8d90"
+    end
+  }
+  level_name = ->(lvl) { %w[debug info warning error fatal][lvl.to_i] || "info" }
+  delta       = @stats.delta_pct
+%>
+
+<h1 style="margin:0 0 8px; font-size:22px; font-weight:600; color:#17161a; letter-spacing:-0.3px;">
+  Your week in
+  <span style="font-family: Georgia, 'Times New Roman', serif; font-style: italic; color:#ff5a3c; font-weight:400;"><%= @organization.name %></span>
+</h1>
+<p style="margin:0 0 24px; font-size:14px; color:#5b5a5f;">
+  Here's what happened over the last 7 days.
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 28px; border-collapse:separate; border-spacing:8px 0;">
+  <tr>
+    <td width="33%" valign="top" style="padding:18px 14px; background:#f6f5f1; border:1px solid #d9d7cf; border-radius:10px; text-align:center;">
+      <div style="font-size:26px; font-weight:700; color:#17161a; letter-spacing:-0.5px; line-height:1.1;">
+        <%= number_with_delimiter(@stats.total_events_this_week) %>
+      </div>
+      <div style="margin-top:4px; font-size:10px; color:#8f8d90; text-transform:uppercase; letter-spacing:0.6px; font-weight:600;">Events</div>
+      <% if delta %>
+        <div style="margin-top:6px; font-size:11px; font-weight:600; color:<%= delta.positive? ? '#ff5a3c' : '#2f7d5d' %>;">
+          <%= delta.positive? ? "+#{delta}%" : "#{delta}%" %> vs last week
+        </div>
+      <% end %>
+    </td>
+    <td width="33%" valign="top" style="padding:18px 14px; background:#f6f5f1; border:1px solid #d9d7cf; border-radius:10px; text-align:center;">
+      <div style="font-size:26px; font-weight:700; color:#17161a; letter-spacing:-0.5px; line-height:1.1;">
+        <%= @stats.new_issue_count %>
+      </div>
+      <div style="margin-top:4px; font-size:10px; color:#8f8d90; text-transform:uppercase; letter-spacing:0.6px; font-weight:600;">New issues</div>
+    </td>
+    <td width="33%" valign="top" style="padding:18px 14px; background:#f6f5f1; border:1px solid #d9d7cf; border-radius:10px; text-align:center;">
+      <div style="font-size:26px; font-weight:700; color:<%= @stats.regression_count.positive? ? '#ff5a3c' : '#17161a' %>; letter-spacing:-0.5px; line-height:1.1;">
+        <%= @stats.regression_count %>
+      </div>
+      <div style="margin-top:4px; font-size:10px; color:#8f8d90; text-transform:uppercase; letter-spacing:0.6px; font-weight:600;">Regressions</div>
+    </td>
+  </tr>
+</table>
+
+<% if (top = @stats.top_issues(limit: 5)).any? %>
+  <h2 style="margin:0 0 12px; font-size:14px; font-weight:600; color:#17161a; text-transform:uppercase; letter-spacing:0.6px;">Top issues this week</h2>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse; margin:0 0 28px;">
+    <thead>
+      <tr>
+        <th align="left" style="padding:10px 8px; border-bottom:1px solid #d9d7cf; font-size:10px; text-transform:uppercase; letter-spacing:0.6px; color:#8f8d90; font-weight:600;">Level</th>
+        <th align="left" style="padding:10px 8px; border-bottom:1px solid #d9d7cf; font-size:10px; text-transform:uppercase; letter-spacing:0.6px; color:#8f8d90; font-weight:600;">Message</th>
+        <th align="left" style="padding:10px 8px; border-bottom:1px solid #d9d7cf; font-size:10px; text-transform:uppercase; letter-spacing:0.6px; color:#8f8d90; font-weight:600;">Project</th>
+        <th align="right" style="padding:10px 8px; border-bottom:1px solid #d9d7cf; font-size:10px; text-transform:uppercase; letter-spacing:0.6px; color:#8f8d90; font-weight:600;">Events</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% top.each do |row| %>
+        <tr>
+          <td valign="top" style="padding:12px 8px; border-bottom:1px solid #ecebe6;">
+            <span style="display:inline-block; padding:2px 8px; background:<%= level_color.call(row[:last_level]) %>; color:#17161a; font-size:10px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; border-radius:999px;"><%= level_name.call(row[:last_level]) %></span>
+          </td>
+          <td valign="top" style="padding:12px 8px; border-bottom:1px solid #ecebe6; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; color:#17161a; word-break:break-word;">
+            <% if row[:issue] && row[:project] %>
+              <%= link_to row[:last_message].to_s.truncate(80), project_issue_url(row[:project], row[:issue].fingerprint), style: "color:#17161a; text-decoration:underline;" %>
+            <% else %>
+              <%= row[:last_message].to_s.truncate(80) %>
+            <% end %>
+          </td>
+          <td valign="top" style="padding:12px 8px; border-bottom:1px solid #ecebe6; font-size:12px; color:#5b5a5f;"><%= row[:project]&.name %></td>
+          <td valign="top" align="right" style="padding:12px 8px; border-bottom:1px solid #ecebe6; font-size:12px; font-weight:600; color:#17161a;"><%= number_with_delimiter(row[:event_count]) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f6f5f1; border:1px solid #d9d7cf; border-radius:10px; margin:0 0 28px;">
+    <tr>
+      <td style="padding:24px; text-align:center; font-size:14px; color:#5b5a5f;">
+        No errors this week. Nice work.
+      </td>
+    </tr>
+  </table>
+<% end %>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td style="border-radius:8px; background:#17161a;">
+      <%= link_to "Open dashboard", @dashboard_url, style: "display:inline-block; padding:12px 22px; color:#f6f5f1; text-decoration:none; font-size:14px; font-weight:600; letter-spacing:0.2px; border-radius:8px;" %>
+    </td>
+  </tr>
+</table>
+
+<% content_for :email_footer do %>
+  <p style="margin:0 0 8px; font-size:12px; color:#8f8d90;">
+    You're getting this weekly summary for <%= @organization.name %>.
+    <%= link_to "Unsubscribe", @unsubscribe_url, style: "color:#5b5a5f; text-decoration:underline;" %> at any time.
+  </p>
+<% end %>

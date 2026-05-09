@@ -1,0 +1,72 @@
+<% content_for :title, "#{@project.name} — Alert rules" %>
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">
+      <span class="dot"></span>
+      <%= @project.name %>
+    </div>
+    <h1 class="page-title">Alert <em>rules</em></h1>
+    <div class="page-sub">
+      <span><span class="k"><%= @alert_rules.size %></span> rules</span>
+      <span><span class="k"><%= @alert_rules.count(&:active?) %></span> active</span>
+    </div>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <%= link_to "Webhook endpoints", project_webhook_endpoints_path(@project), class: "btn btn-ghost btn-sm" %>
+    <%= link_to "New rule", new_project_alert_rule_path(@project), class: "btn btn-primary btn-sm" %>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-head">
+    <span class="title">How rules work</span>
+  </div>
+  <div style="padding:16px 18px; font-size: 13.5px; color: var(--fg-dim); line-height: 1.65;">
+    Without rules, every event above the member's alert threshold fires a notification. Rules let you suppress noise. Only events matching at least one active rule will trigger alerts. Regressions always alert.
+  </div>
+</section>
+
+<section class="panel" style="margin-top:22px;">
+  <div class="panel-head">
+    <span class="title">Rules</span>
+  </div>
+  <% if @alert_rules.empty? %>
+    <div class="panel-empty">
+      <div class="t">No rules yet.</div>
+      <div class="d">Add one to start filtering alerts.</div>
+      <%= link_to "New rule", new_project_alert_rule_path(@project), class: "btn btn-primary btn-sm" %>
+    </div>
+  <% else %>
+    <div>
+      <% @alert_rules.each do |rule| %>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding: var(--row-pad) 18px; border-bottom: 1px solid var(--line); gap:12px;">
+          <div style="min-width:0;">
+            <div style="display:flex; align-items:center; gap:10px; font-size:14px; font-weight:500; color: var(--fg);">
+              <%= rule.name %>
+              <% if rule.active? %>
+                <span class="tag" style="background: color-mix(in oklab, var(--ok) 14%, transparent); color: var(--ok); border: 1px solid color-mix(in oklab, var(--ok) 30%, transparent);">Active</span>
+              <% else %>
+                <span class="tag" style="background: color-mix(in oklab, var(--fg) 6%, transparent); color: var(--fg-dim); border: 1px solid var(--line);">Paused</span>
+              <% end %>
+            </div>
+            <div class="t-meta" style="margin-top:4px;">
+              <%= rule.rule_type.humanize %> · level ≥ <%= Event.levels.key(rule.level_threshold)&.capitalize %>
+              <% if rule.threshold? %>
+                · ≥ <%= rule.count_threshold %> events / <%= rule.window_seconds %>s
+              <% end %>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <%= link_to "Edit", edit_project_alert_rule_path(@project, rule), style: "font-family: var(--mono); font-size: 11.5px; color: var(--fg-dim); text-decoration:none;" %>
+            <%= button_to "Delete", project_alert_rule_path(@project, rule),
+                  method: :delete,
+                  form: { style: "display:inline;" },
+                  style: "background:transparent; border:0; padding:0; font-family: var(--mono); font-size: 11.5px; color: var(--err); cursor:pointer;",
+                  data: { turbo_confirm: "Delete this rule?" } %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</section>

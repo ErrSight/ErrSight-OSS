@@ -1,0 +1,13 @@
+<%# Empty state inside a table. Locals: mode %>
+<div class="es-empty">
+  <div class="es-empty-title">
+    <% if mode == :issues %>No issues match<% else %>No events in range<% end %>
+  </div>
+  <div class="es-empty-sub">
+    <% if @items_query.present? && !@items_query.empty? %>
+      Try clearing the query, or <%= link_to "reset filters", items_url(q: nil, view: "all") %>.
+    <% else %>
+      Send your first event and it shows up here once it is fingerprinted.
+    <% end %>
+  </div>
+</div>

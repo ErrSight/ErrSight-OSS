@@ -38,6 +38,7 @@ Rails.application.configure do
 
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "example.com" }
+  config.action_mailer.asset_host = "http://example.com"
 
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr
@@ -50,4 +51,30 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Use inline adapter so ActiveJob jobs run synchronously in tests
+  config.active_job.queue_adapter = :test
+end
+
+# Cloudflare Turnstile is force-disabled in the test environment regardless of
+# whatever keys may bleed in from a local .env, so registration tests don't
+# need to mint real challenge tokens. Tests that want to exercise the gate
+# stub CloudflareTurnstile.enabled?/verify directly.
+ENV.delete("CLOUDFLARE_TURNSTILE_SITE_KEY")
+ENV.delete("CLOUDFLARE_TURNSTILE_SECRET_KEY")
+
+# Bullet in tests: opt-in via BULLET=true. Off by default so the suite stays
+# quiet for everyday runs; turn on locally or in a dedicated CI step to scan
+# for new N+1 regressions.
+if ENV["BULLET"]
+  Rails.application.config.after_initialize do
+    Bullet.enable        = true
+    Bullet.bullet_logger = true
+    Bullet.raise         = true
+
+    # Counter-cache hints (`.size` triggers a COUNT) are noisier than they're
+    # worth pre-launch — they're at most 1 extra COUNT per request, not an
+    # N+1 fan-out. We focus Bullet on real eager-loading misses for now.
+    Bullet.counter_cache_enable = false
+  end
 end

@@ -1,0 +1,21 @@
+<% content_for :title, "Edit alert rule — #{@project.name}" %>
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow"><span class="dot"></span><%= @project.name %></div>
+    <h1 class="page-title">Edit <em>rule</em></h1>
+  </div>
+  <div>
+    <%= link_to "← Back", project_alert_rules_path(@project), class: "btn btn-ghost btn-sm" %>
+  </div>
+</div>
+
+<section class="panel" style="max-width: 640px;">
+  <div class="panel-head">
+    <span class="title"><%= @alert_rule.name %></span>
+  </div>
+  <div style="padding: 20px 18px;">
+    <%= render "form", alert_rule: @alert_rule,
+          url: project_alert_rule_path(@project, @alert_rule), method: :patch, submit_label: "Save changes" %>
+  </div>
+</section>

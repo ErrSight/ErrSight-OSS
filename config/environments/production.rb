@@ -21,17 +21,20 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  # Container filesystems are typically ephemeral — any local-disk upload is lost on deploy
+  # or container restart. No upload feature exists today, but ACTIVE_STORAGE_SERVICE
+  # should be flipped to :amazon / :gcs (configured in config/storage.yml) before
+  # the first attachment ships. Default stays :local so dev/CI parity isn't broken.
+  config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", "local").to_sym
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  # config.assume_ssl = true
+  config.assume_ssl = true
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
+  config.force_ssl = true
 
   # Skip http-to-https redirect for the default health check endpoint.
-  # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
+  config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
   # Log to STDOUT with the current request id as a default log tag.
   config.log_tags = [ :request_id ]
@@ -46,28 +49,46 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Replace the default in-process memory cache store with a durable alternative.
-  config.cache_store = :solid_cache_store
-
   # Replace the default in-process and non-durable queuing backend for Active Job.
   config.active_job.queue_adapter = :solid_queue
-  config.solid_queue.connects_to = { database: { writing: :queue } }
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  # Database-backed Rails.cache shared across Puma workers and app replicas.
+  # Without this, every Rails.cache.write(..., unless_exist: true) used for alert
+  # debouncing and cleanup gating is per-worker — so the moment
+  # WEB_CONCURRENCY > 1, each worker thinks it's "first" and recipients
+  # get duplicate alerts. Settings live in config/cache.yml.
+  config.cache_store = :solid_cache_store
+
+  # Email delivery via SMTP. Settings are pulled from env so any provider works
+  # — Mailgun, SendGrid, Amazon SES, Postmark, your own Postfix relay. With
+  # SMTP_ADDRESS unset, delivery will fail at send time; if your install
+  # doesn't need email at all, remove :confirmable from app/models/user.rb
+  # so users can register without email verification.
+  #
+  # raise_delivery_errors = true so an SMTP 5xx surfaces as a job failure —
+  # visible in SolidQueue and retried via each mailer job's own retry_on
+  # budget. False would silently swallow errors and lose alerts invisibly.
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address:              ENV["SMTP_ADDRESS"],
+    port:                 ENV.fetch("SMTP_PORT", 587).to_i,
+    domain:               ENV["SMTP_DOMAIN"].presence,
+    user_name:            ENV["SMTP_USERNAME"].presence,
+    password:             ENV["SMTP_PASSWORD"].presence,
+    authentication:       :plain,
+    enable_starttls_auto: true
+  }.compact
+  config.action_mailer.perform_deliveries = true
+  config.action_mailer.raise_delivery_errors = true
 
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
+  config.action_mailer.default_url_options = {
+    host: ENV.fetch("APP_HOST", "localhost"),
+    protocol: "https"
+  }
 
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  # Absolute asset URLs so image_tag in mailer templates renders the logo.
+  config.action_mailer.asset_host = "https://#{ENV.fetch("APP_HOST", "localhost")}"
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
@@ -80,11 +101,13 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   # Enable DNS rebinding protection and other `Host` header attacks.
-  # config.hosts = [
-  #   "example.com",     # Allow requests from example.com
-  #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
-  # ]
-  #
+  # Regex is fully anchored — Rails matches hosts with Regexp#match?, which is
+  # unanchored, so `/.*\.errsight\.com/` would also match `foo.errsight.com.attacker.tld`.
+  config.hosts = [
+    ENV.fetch("APP_HOST", "errsight.com"),
+    /\A(?:.+\.)?errsight\.com\z/
+  ]
+
   # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 end

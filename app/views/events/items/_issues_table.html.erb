@@ -1,0 +1,25 @@
+<%# Dense, sortable Issues table. Column visibility + grid come from the helper. %>
+<div class="es-tablewrap es-itable" style="--iss-grid: <%= items_issue_grid %>;">
+  <div class="es-trow es-thead" role="row">
+    <span class="es-th es-th-static">
+      <span class="es-check es-check-all" role="checkbox" aria-checked="false" tabindex="0"
+            aria-label="Select all"
+            data-items-select-target="all"
+            data-action="click->items-select#toggleAll keydown->items-select#keyToggle"></span>
+    </span>
+    <%= link_to items_sort_url("severity"), class: "es-th#{' is-sorted' if items_sorted?('severity')}" do %>LEVEL<span class="es-th-arrow"><%= items_sort_arrow("severity") %></span><% end %>
+    <span class="es-th es-th-static">ISSUE</span>
+    <% if items_col?("env") %><span class="es-th es-th-static">ENV</span><% end %>
+    <% if items_col?("spark") %><span class="es-th es-th-static">OCCURRENCES</span><% end %>
+    <% if items_col?("events") %><%= link_to items_sort_url("events"), class: "es-th is-num#{' is-sorted' if items_sorted?('events')}" do %>EVENTS<span class="es-th-arrow"><%= items_sort_arrow("events") %></span><% end %><% end %>
+    <% if items_col?("users") %><%= link_to items_sort_url("users"), class: "es-th is-num#{' is-sorted' if items_sorted?('users')}" do %>USERS<span class="es-th-arrow"><%= items_sort_arrow("users") %></span><% end %><% end %>
+    <% if items_col?("last_seen") %><%= link_to items_sort_url("last_seen"), class: "es-th is-num#{' is-sorted' if items_sorted?('last_seen')}" do %>LAST SEEN<span class="es-th-arrow"><%= items_sort_arrow("last_seen") %></span><% end %><% end %>
+    <% if items_col?("assignee") %><span class="es-th es-th-static"></span><% end %>
+  </div>
+
+  <% if @groups.blank? %>
+    <%= render "events/items/empty", mode: :issues %>
+  <% else %>
+    <% @groups.each do |group| %><%= render "events/items/issue_row", group: group %><% end %>
+  <% end %>
+</div>

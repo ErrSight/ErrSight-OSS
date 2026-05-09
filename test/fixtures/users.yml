@@ -1,0 +1,55 @@
+<%
+  # Backfill confirmed_at on every fixture user. Without this, :confirmable
+  # would treat them as unconfirmed and sign_in would redirect to /users/sign_in
+  # before any controller action ran.
+  confirmed = "2026-04-01T00:00:00Z"
+%>
+
+regular:
+  email: user@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  name: Regular User
+  admin: false
+  confirmed_at: <%= confirmed %>
+
+admin:
+  email: admin@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  name: Admin User
+  admin: true
+  confirmed_at: <%= confirmed %>
+
+incomplete:
+  email: incomplete@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  name: Incomplete User
+  admin: false
+  confirmed_at: <%= confirmed %>
+
+over_limit:
+  email: overlimit@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  name: Over Limit User
+  admin: false
+  confirmed_at: <%= confirmed %>
+
+team_owner:
+  email: team_owner@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  name: Team Owner
+  admin: false
+  confirmed_at: <%= confirmed %>
+
+member_user:
+  email: member@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  name: Member User
+  admin: false
+  confirmed_at: <%= confirmed %>
+
+viewer_user:
+  email: viewer@example.com
+  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  name: Viewer User
+  admin: false
+  confirmed_at: <%= confirmed %>

@@ -1,0 +1,48 @@
+error_event:
+  project: alpha
+  level: 3
+  message: Something went wrong in the app
+  environment: production
+  fingerprint: abc123abc123abc1
+  occurred_at: <%= 1.hour.ago.utc %>
+  resolved: false
+  size_bytes: 250
+  discarded: false
+  metadata: {}
+
+resolved_event:
+  project: alpha
+  level: 1
+  message: User logged in successfully
+  environment: production
+  fingerprint: def456def456def4
+  occurred_at: <%= 2.hours.ago.utc %>
+  resolved: true
+  size_bytes: 200
+  discarded: false
+  metadata: {}
+
+staging_event:
+  project: alpha
+  level: 2
+  message: Warning in staging
+  environment: staging
+  fingerprint: ghi789ghi789ghi7
+  occurred_at: <%= 3.hours.ago.utc %>
+  resolved: false
+  size_bytes: 180
+  discarded: false
+  metadata: {}
+
+discarded_event:
+  project: alpha
+  level: 4
+  message: Fatal error discarded
+  environment: production
+  fingerprint: jkl012jkl012jkl0
+  occurred_at: <%= 4.hours.ago.utc %>
+  resolved: false
+  size_bytes: 300
+  discarded: true
+  discarded_at: <%= 3.hours.ago.utc %>
+  metadata: {}

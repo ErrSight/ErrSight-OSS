@@ -1,0 +1,9 @@
+[ErrSight]
+
+<% if @resource.try(:unconfirmed_email?) %>
+Your ErrSight email is being changed to <%= @resource.unconfirmed_email %>. We've sent a confirmation link to the new address — the change takes effect once you follow it.
+<% else %>
+Your ErrSight email has been changed to <%= @resource.email %>.
+<% end %>
+
+If you didn't make this change, contact your organization's administrator right away.

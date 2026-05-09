@@ -1,0 +1,39 @@
+ErrSight OSS
+Copyright (C) 2026 Jijo Bose
+
+This file is part of ErrSight OSS.
+
+ErrSight OSS is free software: you can redistribute it and/or modify it
+under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, version 3 of the License.
+
+ErrSight OSS is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>. A
+verbatim copy is included in the LICENSE file at the root of this
+repository.
+
+------------------------------------------------------------------------
+COPYRIGHT
+
+The copyright in ErrSight OSS is held by Jijo Bose and by the project's
+contributors over their respective contributions. Contributions are
+accepted under the Contributor License Agreement described in
+CONTRIBUTING.md: contributors keep the copyright in their work while
+granting the maintainer the right to license the combined work under both
+the AGPLv3 and other (including commercial) terms.
+
+------------------------------------------------------------------------
+TRADEMARKS
+
+"ErrSight", the ErrSight wordmark, and the ErrSight logo and mark image
+assets are (C) Jijo Bose and are NOT covered by the AGPLv3 grant. The
+license covers the source code only; the name and logo are reserved by
+the author.
+
+If you fork, redistribute, or operate a public instance of this software,
+you must replace the ErrSight name and logo with your own before doing so.
