@@ -1,0 +1,219 @@
+<% content_for :title, "Events — #{@project.name} — ErrSight" %>
+
+<%
+  org        = @project.organization
+  org_slug   = org&.slug || "workspace"
+  proj_slug  = @project.slug.presence || @project.id
+  cur_env    = params[:environment]
+  cur_lvl    = params[:level]
+  cur_rel    = params[:release]
+  cur_res    = params[:resolved]
+  cur_fp     = params[:fingerprint]
+  page_no    = @pagy.page
+  total      = @pagy.count
+  pages      = @pagy.pages
+  from_i     = @pagy.from
+  to_i       = @pagy.to
+  shared_params = { environment: cur_env, level: cur_lvl, release: cur_rel, resolved: cur_res, fingerprint: cur_fp }.compact_blank
+%>
+
+<!-- breadcrumb -->
+<div class="crumb">
+  <span class="dim">~</span>
+  <span>/</span>
+  <span class="k">errsight</span>
+  <span>/</span>
+  <span class="k"><%= org_slug %></span>
+  <span>/</span>
+  <span class="k"><%= proj_slug %></span>
+  <span>/</span>
+  <span class="k">events</span>
+  <% if cur_fp.present? %>
+    <span>/</span>
+    <span class="k"><%= cur_fp.to_s[0, 8] %></span>
+  <% end %>
+  <span class="caret"></span>
+</div>
+
+<!-- page head -->
+<div class="page-head">
+  <div>
+    <div class="eyebrow">
+      <span class="dot"></span>
+      <% if @project.ingestion_paused? %>
+        PAUSED · ingestion disabled
+      <% else %>
+        LIVE · <%= pluralize(total, 'event') %> matching filters
+      <% end %>
+    </div>
+    <h1 class="page-title">Events <em>feed</em>.</h1>
+    <div class="page-sub">
+      <span><span class="k"><%= number_with_delimiter(total) %></span> <%= 'event'.pluralize(total) %></span>
+      <% if cur_env.present? %><span>env · <span class="k"><%= cur_env %></span></span><% end %>
+      <% if cur_lvl.present? %><span>level · <span class="k"><%= cur_lvl %></span></span><% end %>
+      <% if cur_rel.present? %><span>release · <span class="k"><%= cur_rel %></span></span><% end %>
+      <% if cur_fp.present? %><span>fp · <span class="k"><%= cur_fp.to_s[0, 8] %></span></span><% end %>
+    </div>
+  </div>
+  <div style="display:flex; gap: 10px;">
+    <%= link_to export_project_events_path(@project, shared_params.merge(format: :csv)), class: "btn btn-secondary" do %>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v12m-6-6 6-6 6 6M4 20h16"/></svg>
+      Export CSV
+    <% end %>
+    <%= link_to export_project_events_path(@project, shared_params.merge(format: :json)), class: "btn btn-secondary" do %>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z M4 10h16 M10 4v16"/></svg>
+      Export JSON
+    <% end %>
+    <%= link_to groups_project_events_path(@project, environment: cur_env), class: "btn btn-primary" do %>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 6h18M3 12h18M3 18h12"/></svg>
+      Group as issues
+    <% end %>
+  </div>
+</div>
+
+<!-- time series (only when filtered by fingerprint) -->
+<% if cur_fp.present? %>
+  <%= render "projects/time_series",
+        project: @project,
+        fingerprint: cur_fp,
+        environment: cur_env,
+        title: "Occurrences of this issue" %>
+<% end %>
+
+<!-- filter bar -->
+<%= form_with url: project_events_path(@project), method: :get, local: true, class: "filter-bar", data: { controller: "auto-submit" } do |f| %>
+  <div class="search-wrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-5-5m2-6a8 8 0 1 1-16 0 8 8 0 0 1 16 0z"/></svg>
+    <% if cur_fp.present? %>
+      <%= f.hidden_field :fingerprint, value: cur_fp %>
+    <% end %>
+    <%= f.text_field :tag_value, value: params[:tag_value],
+          placeholder: cur_fp.present? ? "fingerprint: #{cur_fp.to_s[0, 16]}" : "Filter by tag value · press ↵ to apply",
+          autocomplete: "off" %>
+    <% if params[:tag_key].present? %>
+      <%= f.hidden_field :tag_key, value: params[:tag_key] %>
+    <% end %>
+    <span class="kbd">↵</span>
+  </div>
+  <div class="filter-btns">
+    <% if @environments.any? %>
+      <label class="filter-btn<%= ' active' if cur_env.present? %>" style="padding: 6px 10px;">
+        <span>env:</span>
+        <%= f.select :environment,
+              [["all", ""]] + @environments.map { |e| [e, e] },
+              { selected: cur_env },
+              class: "val",
+              style: "background: transparent; border: 0; color: inherit; font: inherit; outline: none; cursor: pointer; padding: 0;",
+              data: { action: "change->auto-submit#submit" } %>
+      </label>
+    <% end %>
+    <label class="filter-btn<%= ' active' if cur_lvl.present? %>" style="padding: 6px 10px;">
+      <span>level:</span>
+      <%= f.select :level,
+            [["all", ""]] + Event.levels.keys.map { |l| [l, l] },
+            { selected: cur_lvl },
+            class: "val",
+            style: "background: transparent; border: 0; color: inherit; font: inherit; outline: none; cursor: pointer; padding: 0;",
+            data: { action: "change->auto-submit#submit" } %>
+    </label>
+    <% if @releases&.any? %>
+      <label class="filter-btn<%= ' active' if cur_rel.present? %>" style="padding: 6px 10px;">
+        <span>rel:</span>
+        <%= f.select :release,
+              [["any", ""]] + @releases.map { |r| [r, r] },
+              { selected: cur_rel },
+              class: "val",
+              style: "background: transparent; border: 0; color: inherit; font: inherit; outline: none; cursor: pointer; padding: 0;",
+              data: { action: "change->auto-submit#submit" } %>
+      </label>
+    <% end %>
+    <label class="filter-btn<%= ' active' if cur_res.present? %>" style="padding: 6px 10px;">
+      <span>status:</span>
+      <%= f.select :resolved,
+            [["unresolved", ""], ["resolved", "true"]],
+            { selected: cur_res },
+            class: "val",
+            style: "background: transparent; border: 0; color: inherit; font: inherit; outline: none; cursor: pointer; padding: 0;",
+            data: { action: "change->auto-submit#submit" } %>
+    </label>
+    <% if shared_params.any? %>
+      <%= link_to "reset", project_events_path(@project), class: "filter-btn" %>
+    <% end %>
+  </div>
+<% end %>
+
+<!-- view toolbar -->
+<div class="view-toolbar">
+  <span class="count"><%= pluralize(total, 'event') %></span>
+  <% if total.positive? %>
+    <span>·</span>
+    <span>showing <span style="color: var(--fg);"><%= number_with_delimiter(from_i) %>–<%= number_with_delimiter(to_i) %></span></span>
+  <% end %>
+  <div class="right">
+    <span>view:</span>
+    <div class="view-switch">
+      <%= link_to "Issues", groups_project_events_path(@project, environment: cur_env) %>
+      <a class="active">Raw events</a>
+    </div>
+  </div>
+</div>
+
+<!-- events list -->
+<div class="panel" id="events-container">
+  <div class="col-head raw">
+    <span>occurred_at</span>
+    <span>level</span>
+    <span>message</span>
+    <span>user</span>
+    <span>release · env</span>
+    <span></span>
+  </div>
+
+  <% if @events.empty? %>
+    <div style="padding: 56px 24px; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--fg-dim);">
+      <div style="font-family: var(--sans); font-size: 16px; color: var(--fg); margin-bottom: 6px;">No events in range</div>
+      <div>Try widening the filters — or clear them to see everything.</div>
+    </div>
+  <% else %>
+    <div id="events-list">
+      <% @events.each do |event| %>
+        <%= link_to project_event_path(@project, event), class: "raw-row", id: "event-#{event.id}" do %>
+          <div class="ts"><%= event.occurred_at&.strftime("%H:%M:%S.%L") %></div>
+          <div>
+            <span class="lvl <%= event.level %>"><%= event.level.to_s.upcase %></span>
+          </div>
+          <div class="txt">
+            <% if event.resolved? %><span class="dim">[resolved]</span> <% end %><%= event.message %>
+          </div>
+          <div class="user"><%= event.user_identifier.presence || '—' %></div>
+          <div class="loc">
+            <% if event.release.present? %><%= event.release %><% else %><span>—</span><% end %>
+            <span style="color: var(--fg-dimmer);"> · </span>
+            <%= event.environment.presence || '—' %>
+          </div>
+          <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="list-foot">
+      <span><%= number_with_delimiter(total) %> <%= 'event'.pluralize(total) %> · showing <%= number_with_delimiter(from_i) %>–<%= number_with_delimiter(to_i) %></span>
+      <% if pages > 1 %>
+        <div class="pager">
+          <% if @pagy.prev %>
+            <%= link_to "← prev", url_for(shared_params.merge(page: @pagy.prev)) %>
+          <% else %>
+            <span style="opacity: 0.35;">← prev</span>
+          <% end %>
+          <em class="current"><%= page_no %></em>
+          <span style="opacity: 0.5;">/ <%= pages %></span>
+          <% if @pagy.next %>
+            <%= link_to "next →", url_for(shared_params.merge(page: @pagy.next)) %>
+          <% else %>
+            <span style="opacity: 0.35;">next →</span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

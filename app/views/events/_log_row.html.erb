@@ -1,0 +1,28 @@
+<%
+  request_id = event.metadata&.dig("request_id")
+  email      = event.metadata&.dig("email")
+  user_id    = event.metadata&.dig("user_id")
+  full_path  = event.metadata&.dig("full_path")
+%>
+<%= link_to project_event_path(project, event), data: { log_row: true },
+      class: "raw-row",
+      style: "grid-template-columns: 180px 60px 1fr 160px 160px; gap: 14px; padding: 8px 18px;" do %>
+  <span class="ts">
+    <%= event.occurred_at.strftime("%Y-%m-%d %H:%M:%S") %>.<span style="color: var(--fg-dimmer);"><%= event.occurred_at.strftime("%L") %></span>
+  </span>
+  <span class="lvl <%= event.level %>"><%= event.level&.upcase %></span>
+  <span class="txt">
+    <%= event.message %>
+    <% if request_id.present? %>
+      <span class="dim"> · <%= request_id.first(8) %></span>
+    <% end %>
+  </span>
+  <span class="user">
+    <% if email.present? || user_id.present? %>
+      <span class="acc" style="color: var(--accent);"><%= email.presence || "user##{user_id}" %></span>
+    <% end %>
+  </span>
+  <span class="loc">
+    <% if full_path.present? %><%= full_path %><% end %>
+  </span>
+<% end %>

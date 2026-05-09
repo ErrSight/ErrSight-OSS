@@ -1,0 +1,121 @@
+<% content_for :title, "#{@project.name} — API keys" %>
+
+<%
+  field_style = "width:100%; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 12px; font-family: var(--mono); font-size: 12.5px;"
+%>
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">
+      <span class="dot"></span>
+      <%= @project.name %>
+    </div>
+    <h1 class="page-title">API <em>keys</em></h1>
+    <div class="page-sub">
+      <span><span class="k"><%= @api_keys.size %></span> keys</span>
+      <span><span class="k"><%= @api_keys.count { |k| !k.revoked? } %></span> active</span>
+    </div>
+  </div>
+  <div>
+    <%= link_to "← Back to project", project_path(@project), class: "btn btn-ghost btn-sm" %>
+  </div>
+</div>
+
+<% if @just_created_token.present? %>
+  <section class="panel" style="margin-bottom:22px; border-color: color-mix(in oklab, var(--ok) 40%, var(--line)); background: color-mix(in oklab, var(--ok) 6%, var(--bg-3));">
+    <div style="padding: 16px 18px;">
+      <div class="t-eyebrow" style="color: var(--ok); margin-bottom: 8px;">New key · copy it now · it won't be shown again</div>
+      <div class="pc-api-bar" data-controller="copy" style="padding: 10px 14px;">
+        <span class="v" data-copy-target="content" style="color: var(--accent); letter-spacing:0;"><%= @just_created_token %></span>
+        <button type="button" data-action="click->copy#copy" class="btn btn-ghost btn-sm" style="font-family:var(--mono); font-size:11px;">Copy</button>
+      </div>
+    </div>
+  </section>
+<% end %>
+
+<section class="panel">
+  <div class="panel-head">
+    <span class="title">Create new key</span>
+  </div>
+  <div style="padding: 18px;">
+    <p style="margin: 0 0 16px; font-size: 13.5px; color: var(--fg-dim); line-height: 1.55;">
+      <strong style="color: var(--fg);">Write</strong> keys ingest events (same as your project token).
+      <strong style="color: var(--fg);">Read</strong> keys grant access to <code>GET /api/v1/events</code> and <code>GET /api/v1/issues/:fingerprint</code>.
+    </p>
+    <%= form_with model: @new_api_key, url: project_api_keys_path(@project), local: true,
+          style: "display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px;" do |f| %>
+      <div style="flex:1; min-width: 240px;">
+        <%= f.label :name, "Name", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+        <%= f.text_field :name, placeholder: "e.g. CI read-only", style: field_style %>
+      </div>
+      <div style="width: 140px;">
+        <%= f.label :scope, "Scope", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+        <%= f.select :scope, [["Read", "read"], ["Write", "write"]], {}, style: field_style.sub("--mono", "--sans").sub("12.5px", "13.5px") %>
+      </div>
+      <%= f.submit "Create key", class: "btn btn-primary btn-sm" %>
+    <% end %>
+    <% if @new_api_key.errors.any? %>
+      <ul style="margin: 12px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--err);">
+        <% @new_api_key.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+</section>
+
+<section class="panel" style="margin-top:22px;">
+  <div class="panel-head">
+    <span class="title">Existing keys</span>
+  </div>
+  <% if @api_keys.empty? %>
+    <div class="panel-empty">
+      <div class="t">No keys yet.</div>
+      <div class="d">Create one above to begin ingesting or reading events.</div>
+    </div>
+  <% else %>
+    <div>
+      <% @api_keys.each do |key| %>
+        <% is_default = (key.token == @project.api_key) %>
+        <%
+          scope_color = key.scope_read? ? "var(--info)" : "var(--warn)"
+        %>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; padding: var(--row-pad) 18px; border-bottom: 1px solid var(--line);">
+          <div style="min-width:0; flex:1;">
+            <div style="display:flex; align-items:center; gap:10px; font-size:14px; color: var(--fg); font-weight:500; flex-wrap: wrap;">
+              <%= key.name %>
+              <% if is_default %>
+                <span class="tag" style="background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line);">Default</span>
+              <% end %>
+              <span class="tag" style="background: color-mix(in oklab, <%= scope_color %> 14%, transparent); color: <%= scope_color %>; border: 1px solid color-mix(in oklab, <%= scope_color %> 30%, transparent);">
+                <%= key.scope.upcase %>
+              </span>
+              <% if key.revoked? %>
+                <span class="tag" style="background: color-mix(in oklab, var(--err) 14%, transparent); color: var(--err); border: 1px solid color-mix(in oklab, var(--err) 30%, transparent);">
+                  Revoked <%= time_ago_in_words(key.revoked_at) %> ago
+                </span>
+              <% end %>
+            </div>
+            <div class="t-meta" style="margin-top:4px;">
+              <span style="color: var(--accent);"><%= key.token[0, 8] %>…<%= key.token[-4, 4] %></span>
+              <% if key.last_used_at %>
+                · last used <%= time_ago_in_words(key.last_used_at) %> ago
+              <% else %>
+                · never used
+              <% end %>
+            </div>
+          </div>
+          <div style="flex-shrink:0;">
+            <% if !key.revoked? && !is_default %>
+              <%= button_to "Revoke", project_api_key_path(@project, key),
+                    method: :delete,
+                    form: { style: "display:inline;" },
+                    style: "background:transparent; border:0; padding:0; font-family: var(--mono); font-size: 11.5px; color: var(--err); cursor:pointer;",
+                    data: { turbo_confirm: "Revoke this key? This cannot be undone." } %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</section>

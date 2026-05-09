@@ -1,0 +1,92 @@
+<% content_for :title, "#{@organization.name} — ErrSight" %>
+
+<%
+  role_tag = ->(role) {
+    color = case role
+            when "admin"  then "var(--accent)"
+            when "member" then "var(--info)"
+            else "var(--fg-dim)"
+            end
+    content_tag :span, role.capitalize, class: "tag",
+      style: "background: color-mix(in oklab, #{color} 14%, transparent); color: #{color}; border: 1px solid color-mix(in oklab, #{color} 30%, transparent);"
+  }
+%>
+
+<div class="page-head" style="padding-bottom: 14px;">
+  <div>
+    <div class="eyebrow"><span class="dot"></span><%= @organization.name %></div>
+    <h1 style="font-family: var(--sans); font-weight: 500; letter-spacing: -0.025em; font-size: 28px; line-height: 1.15; margin: 0;"><%= @organization.name %></h1>
+    <div style="margin-top: 6px; font-family: var(--mono); font-size: 11.5px; color: var(--fg-dim); display:flex; gap: 14px; flex-wrap: wrap;">
+      <span>members <span style="color: var(--fg);"><%= @members.count %></span></span>
+      <span>projects <span style="color: var(--fg);"><%= @projects.size %></span></span>
+    </div>
+  </div>
+  <div style="display:flex; gap: 6px;">
+    <% if @membership %>
+      <%= link_to "Alerts", edit_alert_preference_path(@organization), class: "btn btn-secondary btn-sm" %>
+    <% end %>
+    <% if @membership&.admin? %>
+      <%= link_to "Team", organization_memberships_path(@organization), class: "btn btn-secondary btn-sm" %>
+      <%= link_to "Settings", edit_organization_path(@organization), class: "btn btn-secondary btn-sm" %>
+    <% end %>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-head" style="padding: 10px 14px;">
+    <span class="title">Projects</span>
+    <span class="right">
+      <% if @membership&.admin? %>
+        <%= link_to "+ New project", new_project_path(organization_id: @organization.id), style: "color: var(--accent);" %>
+      <% end %>
+    </span>
+  </div>
+  <% if @projects.any? %>
+    <div>
+      <% @projects.each do |project| %>
+        <%= link_to project_path(project),
+              style: "display:flex; align-items:center; justify-content:space-between; gap: 14px; padding: var(--row-pad) 16px; border-bottom: 1px solid var(--line); text-decoration:none; color: inherit; transition: background 0.12s;" do %>
+          <div style="min-width:0;">
+            <div style="font-size: 14px; font-weight: 500; color: var(--fg);"><%= project.name %></div>
+            <div class="t-meta" style="margin-top: 3px;">
+              <%= number_with_delimiter(project.events_count) %> events · <%= number_to_human_size(project.storage_bytes) %>
+            </div>
+          </div>
+          <% if project.ingestion_paused? %>
+            <span class="tag" style="background: color-mix(in oklab, var(--warn) 14%, transparent); color: var(--warn); border: 1px solid color-mix(in oklab, var(--warn) 30%, transparent);">Paused</span>
+          <% end %>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="panel-empty">
+      <div class="t">No projects yet.</div>
+      <div class="d">Create one to start tracking errors.</div>
+    </div>
+  <% end %>
+</section>
+
+<section class="panel" style="margin-top: 14px;">
+  <div class="panel-head" style="padding: 10px 14px;">
+    <span class="title">Team members</span>
+    <span class="right"><%= link_to "Manage", organization_memberships_path(@organization) %></span>
+  </div>
+  <div>
+    <% @members.each do |membership| %>
+      <% user = membership.user %>
+      <% initial = (user.name.presence || user.email).to_s[0].to_s.upcase %>
+      <div style="display:flex; align-items:center; justify-content:space-between; padding: 10px 16px; border-bottom: 1px solid var(--line); gap: 12px;">
+        <div style="display:flex; align-items:center; gap: 10px; min-width:0;">
+          <div style="width:28px; height:28px; border-radius:50%; background: linear-gradient(135deg, var(--accent), oklch(55% 0.14 250)); color:#fff; font-family: var(--mono); font-weight: 600; font-size: 11px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <%= initial %>
+          </div>
+          <div style="min-width:0;">
+            <div style="font-size: 13px; font-weight: 500; color: var(--fg);"><%= user.name.presence || user.email %></div>
+            <div class="t-meta" style="margin-top: 1px;"><%= user.email %></div>
+          </div>
+        </div>
+        <%= role_tag.call(membership.role) %>
+      </div>
+    <% end %>
+  </div>
+</section>

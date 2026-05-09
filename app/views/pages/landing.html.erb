@@ -1,0 +1,242 @@
+<% content_for :title, "ErrSight OSS" %>
+
+<nav class="top">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <%= image_tag "errsight-wordmark-light.svg", alt: "ErrSight", class: "brand-logo", height: 36 %>
+    </a>
+    <div class="nav-links">
+      <%= link_to "Docs", docs_path %>
+      <%= link_to "Integrations", integrations_path %>
+      <%= link_to "Support", support_path %>
+    </div>
+    <div class="nav-right">
+      <% if user_signed_in? %>
+        <%= link_to "Dashboard", authenticated_root_path, class: "btn btn-primary" %>
+      <% else %>
+        <% if public_signup_allowed? %>
+          <%= link_to "Sign in", new_user_session_path, class: "btn btn-ghost" %>
+        <% end %>
+        <%= link_to primary_cta_label, primary_cta_path, class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <header class="hero">
+    <div class="hero-grid-bg"></div>
+    <div class="hero-bg"></div>
+    <div class="hero-inner">
+      <div class="hero-split">
+        <div>
+          <h1 class="hero-title">
+            Find the error <em>before</em> the user does.
+          </h1>
+          <p class="hero-sub">
+            ErrSight OSS is self-hostable error tracking and log management.
+            Capture every exception and log line the instant it happens, grouped by fingerprint and
+            attributed to the user who hit it. Run it on your own infrastructure, keep your data.
+          </p>
+          <div class="hero-ctas">
+            <%= link_to primary_cta_path, class: "btn btn-primary btn-lg" do %>
+              <%= primary_cta_label %>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+            <% end %>
+            <%= link_to docs_path, class: "btn btn-secondary btn-lg" do %>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z M8 8h8 M8 12h8 M8 16h4"/></svg>
+              Read the docs
+            <% end %>
+          </div>
+          <div class="hero-meta">
+            <span><span class="k">Self-hosted</span> · your data stays with you</span>
+            <span><span class="k">2 min</span> · to integrate</span>
+            <span><span class="k">Open source</span> · AGPLv3 licensed</span>
+          </div>
+        </div>
+
+        <div class="feed" aria-label="Live error feed preview">
+          <div class="feed-chrome">
+            <span class="traffic"><i></i><i></i><i></i></span>
+            <div class="feed-tabs">
+              <span class="feed-tab active">errsight › production</span>
+            </div>
+            <div class="right">
+              <span class="live-badge"><span class="blink"></span>LIVE</span>
+            </div>
+          </div>
+          <div class="feed-toolbar">
+            <span class="chip accent">● all</span>
+            <span class="chip">error</span>
+            <span class="chip">warn</span>
+            <span class="chip">info</span>
+            <span class="count" id="eventCount">events: 0</span>
+          </div>
+          <div class="feed-list" id="feedList">
+            <!-- rows injected by the script at the foot of this page -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="container">
+    <div class="section-head">
+      <div>
+        <div class="section-label">Capabilities</div>
+        <h2 class="section-title">Everything you need to debug <em>faster</em>.</h2>
+      </div>
+      <p class="section-lede">
+        From raw log lines to grouped error fingerprints: one place to see what broke,
+        who it hit, and where in your stack it started.
+      </p>
+    </div>
+
+    <div class="features">
+      <div class="feat">
+        <div class="feat-num">F01 · ERROR TRACKING</div>
+        <h3 class="feat-h">Exceptions captured automatically.</h3>
+        <p class="feat-p">Unhandled exceptions from Rails controllers, React components, and browser globals. Full stack traces, source map resolved, routed to the right project.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">F02 · FINGERPRINTING</div>
+        <h3 class="feat-h">Group noise into signal.</h3>
+        <p class="feat-p">Similar errors are hashed by exception class + top in-app stack frame and merged into a single issue. 10,000 events become 3 actionable threads.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">F03 · LIVE LOGS</div>
+        <h3 class="feat-h">Terminal-style log viewer.</h3>
+        <p class="feat-p">All levels (debug, info, warn, error, fatal) with infinite scroll, keyword search, and stream-as-they-happen rendering over Action Cable.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">F04 · USER CONTEXT</div>
+        <h3 class="feat-h">Know exactly who hit it.</h3>
+        <p class="feat-p">Auto-attaches user ID, email, and session details to every error. No code changes needed for typical Rails / Devise apps.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">F05 · ALERTS</div>
+        <h3 class="feat-h">Email, Slack, and webhook alerts.</h3>
+        <p class="feat-p">Per-project alert rules with debounce and mute. Wire up Slack at the org level and incident webhooks per project.</p>
+      </div>
+
+      <div class="feat">
+        <div class="feat-num">F06 · BATCHING</div>
+        <h3 class="feat-h">Zero latency impact.</h3>
+        <p class="feat-p">Events are batched in a background thread and flushed on a timer. Nothing blocks your request cycle. Nothing is dropped on process exit.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 40px 0;">
+    <div class="final">
+      <h2>Run it on your own <em>infrastructure</em>.</h2>
+      <p>Docker compose, Kamal, bare metal. Your call. Bring your own Postgres (TimescaleDB optional for hypertable compression).</p>
+      <div class="ctas">
+        <%= link_to primary_cta_path, class: "btn btn-primary btn-lg" do %>
+          <%= primary_cta_label %>
+        <% end %>
+        <%= link_to "Read the docs", docs_path, class: "btn btn-secondary btn-lg" %>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="foot-inner">
+      <div class="foot-col">
+        <a class="brand" href="/">
+          <%= image_tag "errsight-wordmark-light.svg", alt: "ErrSight", class: "brand-logo", height: 28 %>
+        </a>
+        <p class="foot-about">Self-hosted error tracking &amp; log management. AGPLv3, no billing.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Developers</h4>
+        <%= link_to "Documentation", docs_path %>
+        <%= link_to "Integrations", integrations_path %>
+        <%= link_to "Support", support_path %>
+      </div>
+      <div class="foot-col">
+        <h4>Account</h4>
+        <% if user_signed_in? %>
+          <%= link_to "Dashboard", authenticated_root_path %>
+        <% else %>
+          <%= link_to "Sign in", new_user_session_path %>
+          <% if public_signup_allowed? %>
+            <%= link_to "Sign up", new_user_registration_path %>
+          <% end %>
+        <% end %>
+        <%= link_to "Privacy", privacy_path %>
+        <%= link_to "Terms", terms_path %>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>ErrSight OSS · © <%= Date.current.year %></span>
+    </div>
+  </div>
+</footer>
+
+<%# Hero "live error feed" is a purely cosmetic, client-side demo. It shows
+    canned sample rows, NOT real events: the landing page is public/pre-auth,
+    so it must never stream this instance's actual error contents. The real
+    live feed lives on the signed-in dashboard. %>
+<%= javascript_tag nonce: true do %>
+  (function () {
+    const feedTemplates = [
+      { lvl: "err",  t: 'NoMethodError <span class="dim">in</span> <span class="acc">UsersController#show</span>',         n: 142 },
+      { lvl: "warn", t: 'Stripe::APIConnectionError <span class="dim">· retry</span> <span class="acc">2/3</span>',        n: 88 },
+      { lvl: "info", t: 'User <span class="acc">#4821</span> <span class="dim">·</span> checkout.completed',                n: 1 },
+      { lvl: "err",  t: 'PG::UniqueViolation <span class="dim">·</span> users.email_idx',                                  n: 73 },
+      { lvl: "dbg",  t: 'Rolling back transaction <span class="dim">· txn_8f3c2</span>',                                   n: 1 },
+      { lvl: "err",  t: 'TypeError <span class="dim">in</span> <span class="acc">&lt;CheckoutModal/&gt;</span> · line 142', n: 311 },
+      { lvl: "info", t: 'Background job <span class="acc">Mailers::ReceiptJob</span> <span class="dim">·</span> queued',    n: 1 },
+      { lvl: "warn", t: 'Slow query <span class="dim">·</span> 1,204ms <span class="acc">· orders.index</span>',           n: 4 },
+      { lvl: "err",  t: 'ActionController::RoutingError <span class="dim">·</span> /api/v2/session',                       n: 29 },
+      { lvl: "info", t: 'Webhook <span class="acc">stripe.payment_intent.succeeded</span> <span class="dim">· 200</span>', n: 1 },
+      { lvl: "dbg",  t: 'Cache hit <span class="dim">·</span> user.4821.profile',                                          n: 1 },
+      { lvl: "err",  t: 'ActiveRecord::StatementInvalid <span class="dim">·</span> deadlock detected',                     n: 52 },
+    ];
+
+    const list = document.getElementById("feedList");
+    const countEl = document.getElementById("eventCount");
+    if (!list || !countEl) return;
+
+    const nowStr = () => {
+      const d = new Date();
+      const p = (v, n = 2) => String(v).padStart(n, "0");
+      return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}.${p(d.getMilliseconds(), 3)}`;
+    };
+
+    let eventCount = 0;
+    const addRow = (tpl, fresh = true) => {
+      const row = document.createElement("div");
+      row.className = "feed-row" + (fresh ? " fresh" : "");
+      const lvlLabel = { err: "ERROR", warn: "WARN ", info: "INFO ", dbg: "DEBUG" }[tpl.lvl];
+      row.innerHTML = `
+        <div class="ts">${nowStr()}</div>
+        <div class="msg">
+          <span class="lvl ${tpl.lvl}">${lvlLabel}</span>
+          <span class="txt">${tpl.t}</span>
+        </div>
+        <div class="count-pill">×${tpl.n}</div>
+      `;
+      list.insertBefore(row, list.firstChild);
+      while (list.children.length > 9) list.removeChild(list.lastChild);
+      eventCount++;
+      countEl.textContent = `events: ${eventCount.toLocaleString()}`;
+    };
+
+    for (let i = 0; i < 6; i++) addRow(feedTemplates[i], false);
+
+    const timer = setInterval(() => {
+      addRow(feedTemplates[Math.floor(Math.random() * feedTemplates.length)]);
+    }, 2100);
+
+    // Stop the timer when Turbo navigates away so visits don't stack intervals.
+    document.addEventListener("turbo:before-cache", () => clearInterval(timer), { once: true });
+  })();
+<% end %>
