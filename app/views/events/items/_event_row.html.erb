@@ -1,0 +1,8 @@
+<%# A single dense raw-event row. Local: event. Reuses .raw-row + .lvl styling. %>
+<%= link_to project_event_path(@project, event), class: "raw-row es-erow", id: "event-#{event.id}" do %>
+  <span class="es-ev-level lvl <%= event.level %>"><%= event.level.to_s.upcase %></span>
+  <span class="ts"><%= event.occurred_at&.strftime("%H:%M:%S.%L") %></span>
+  <span class="txt es-ev-msg"><% if event.resolved? %><span class="dim">[resolved]</span> <% end %><%= event.message %></span>
+  <span class="user"><%= event.user_identifier.presence || "—" %></span>
+  <span class="loc"><%= event.release.presence || "—" %> <span class="es-ev-dot">·</span> <%= event.environment.presence || "—" %></span>
+<% end %>

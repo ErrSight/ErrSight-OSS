@@ -1,0 +1,29 @@
+regular_admin:
+  organization: regular_org
+  user: regular
+  role: 0
+
+admin_admin:
+  organization: admin_org
+  user: admin
+  role: 0
+
+over_limit_admin:
+  organization: over_limit_org
+  user: over_limit
+  role: 0
+
+team_owner_admin:
+  organization: team_org
+  user: team_owner
+  role: 0
+
+team_member:
+  organization: team_org
+  user: member_user
+  role: 1
+
+team_viewer:
+  organization: team_org
+  user: viewer_user
+  role: 2

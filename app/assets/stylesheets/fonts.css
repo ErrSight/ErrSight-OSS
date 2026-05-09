@@ -1,0 +1,78 @@
+/* ============================================================
+   ErrSight — self-hosted brand fonts (@font-face).
+   Geist (sans), JetBrains Mono (mono), Instrument Serif (serif).
+
+   Files live in app/assets/fonts/ and are served by Propshaft;
+   the bare url() filenames are rewritten to digested /assets paths
+   at compile time. Load this before design.css / landing.css.
+
+   Replaces the Google Fonts CDN <link> in the layouts, so there is
+   no third-party request at runtime. font-display: swap keeps text
+   visible while a face loads. Weights mirror the design tokens
+   (--sans / --mono / --serif) in design.css and landing.css.
+   ============================================================ */
+
+/* ---------- Geist — UI, body, all headings (300-700) ---------- */
+@font-face {
+  font-family: "Geist";
+  src: url("Geist-Light.woff2") format("woff2");
+  font-weight: 300; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Geist";
+  src: url("Geist-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Geist";
+  src: url("Geist-Medium.woff2") format("woff2");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Geist";
+  src: url("Geist-SemiBold.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Geist";
+  src: url("Geist-Bold.woff2") format("woff2");
+  /* Bold covers 700. The four font-weight:800 rules in landing.css
+     map here too: no ExtraBold file ships, and every 800 use is a
+     single-glyph mono badge / circle where the delta is invisible.
+     Declaring the range avoids the browser synthesising faux-bold. */
+  font-weight: 700 900; font-style: normal; font-display: swap;
+}
+
+/* ---------- JetBrains Mono — code, traces, meta, chips, counters ---------- */
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("JetBrainsMono-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("JetBrainsMono-Medium.woff2") format("woff2");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("JetBrainsMono-SemiBold.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("JetBrainsMono-Bold.woff2") format("woff2");
+  font-weight: 700 900; font-style: normal; font-display: swap;
+}
+
+/* ---------- Instrument Serif — the <em> accent word (italic) ---------- */
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("InstrumentSerif-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("InstrumentSerif-Italic.woff2") format("woff2");
+  font-weight: 400; font-style: italic; font-display: swap;
+}

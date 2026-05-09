@@ -1,0 +1,153 @@
+<%#
+  Issue detail rendered into the #issue-overlay Turbo Frame (the slide-in
+  overlay on the issues list). Served by IssuesController#show for
+  turbo-frame requests only; direct navigation still gets the full
+  triage + comments page. Mirrors the App UI kit IssueDetail composition:
+  head (chip + tags + fingerprint + em title + actions), metric tiles,
+  then a two-column stack trace / context + affected-users layout.
+%>
+<%= turbo_frame_tag "issue-overlay" do %>
+  <%
+    ev       = @latest_event
+    fp       = @issue.fingerprint.to_s
+    sum      = @summary || {}
+    lvl      = (sum[:level] || ev&.level).to_s.presence || "info"
+    msg      = (ev&.message.presence || @issue.last_message.presence || "(no recent events)").to_s
+    # Error class is everything before the first ": " (colon + space), so
+    # namespaced classes like ActionController::RoutingError survive intact.
+    err_klass = msg.split(/:\s/, 2).first.to_s.strip
+    affected  = (sum[:affected_users] || 0).to_i
+    occurred  = (sum[:occurrences] || @events.size).to_i
+    resolved = sum.fetch(:all_resolved, ev ? ev.resolved? : false)
+
+    users = @events.filter_map { |e|
+      uc = e.user_context.is_a?(Hash) ? e.user_context : {}
+      uc["email"].presence || uc["username"].presence || e.user_identifier.presence
+    }.uniq
+    affected = users.size if affected.zero?
+
+    frames   = ev ? event_frames(ev) : []
+    open_idx = frames.index { |f| f[:in_app] } || 0
+    user_ctx = ev&.user_context.is_a?(Hash) ? ev.user_context : {}
+    metadata = ev&.metadata.is_a?(Hash) ? ev.metadata : {}
+  %>
+
+  <div class="iss-ov-head">
+    <div style="min-width:0;">
+      <div class="iss-ov-meta">
+        <span class="lvl <%= lvl %>"><span class="dot"></span><%= lvl.upcase %></span>
+        <% if ev&.environment.present? %>
+          <span class="tag env"><span class="k">env:</span><span class="v"><%= ev.environment %></span></span>
+        <% end %>
+        <% if ev&.release.present? %>
+          <span class="tag rel"><span class="k">rel:</span><span class="v"><%= ev.release %></span></span>
+        <% end %>
+        <% if resolved %><span class="resolved-badge">resolved</span><% end %>
+        <span class="iss-ov-fp"><%= fp %></span>
+      </div>
+      <h2 class="iss-ov-title">
+        <code><%= err_klass.truncate(64) %></code>
+        <% if affected.positive? %><em>hit</em> <%= pluralize(affected, "user") %><% else %><em>seen</em> <%= pluralize(occurred, "time") %><% end %>
+      </h2>
+      <div class="iss-ov-sub"><%= msg.truncate(180) %></div>
+    </div>
+    <div class="iss-ov-actions">
+      <% if %w[error fatal].include?(lvl) %>
+        <% if resolved %>
+          <%= button_to "Reopen", unresolve_group_project_events_path(@project, fingerprint: fp),
+                method: :patch, form: { class: "contents", data: { turbo_frame: "_top" } }, class: "btn btn-secondary" %>
+        <% else %>
+          <%= button_to "Resolve", resolve_group_project_events_path(@project, fingerprint: fp),
+                method: :patch, form: { class: "contents", data: { turbo_frame: "_top" } }, class: "btn btn-primary" %>
+        <% end %>
+      <% end %>
+      <% if @can_mute_events %>
+        <% if @muted %>
+          <%= button_to "Unmute", unmute_group_project_events_path(@project, fingerprint: fp),
+                method: :delete, form: { class: "contents", data: { turbo_frame: "_top" } }, class: "btn btn-secondary" %>
+        <% else %>
+          <%= button_to "Mute", mute_group_project_events_path(@project, fingerprint: fp),
+                method: :post, form: { class: "contents", data: { turbo_frame: "_top" } }, class: "btn btn-secondary" %>
+        <% end %>
+      <% end %>
+      <%= link_to "View events", project_events_path(@project, fingerprint: fp, q: "is:all"),
+            class: "btn btn-secondary", data: { turbo_frame: "_top" } %>
+      <%= link_to "Open full issue", project_issue_path(@project, fp), class: "btn btn-secondary", data: { turbo_frame: "_top" } %>
+      <button type="button" class="btn-icon" data-action="overlay#close" aria-label="Close overlay" title="Close (Esc)">✕</button>
+    </div>
+  </div>
+
+  <div class="stat-strip cells iss-ov-stats">
+    <div class="stat-cell">
+      <div class="k">Events · lifetime</div>
+      <div class="v"><%= number_with_delimiter(sum[:occurrences] || @events.size) %></div>
+      <div class="d">for this fingerprint</div>
+    </div>
+    <div class="stat-cell">
+      <div class="k">Users impacted</div>
+      <div class="v"><%= number_with_delimiter(affected) %></div>
+      <div class="d"><%= affected.positive? ? "distinct identifiers" : "none tracked" %></div>
+    </div>
+    <div class="stat-cell">
+      <div class="k">First seen</div>
+      <div class="v" style="font-family: var(--mono); font-size: 15px; font-weight: 500;"><%= sum[:first_seen] ? "#{time_ago_in_words(sum[:first_seen])} ago" : "—" %></div>
+      <div class="d"><%= sum[:first_seen]&.strftime("%Y-%m-%d") || "—" %></div>
+    </div>
+    <div class="stat-cell">
+      <div class="k">Last seen</div>
+      <div class="v" style="font-family: var(--mono); font-size: 15px; font-weight: 500;"><%= sum[:last_seen] ? "#{time_ago_in_words(sum[:last_seen])} ago" : "—" %></div>
+      <div class="d"><%= resolved ? "resolved" : "still firing" %></div>
+    </div>
+  </div>
+
+  <div class="iss-ov-cols">
+    <div style="min-width:0;">
+      <div class="t-eyebrow" style="padding: 4px 2px 8px;">STACK TRACE</div>
+      <div class="panel" style="padding: 0; overflow: hidden;">
+        <% if frames.any? %>
+          <%= render partial: "events/frame", collection: frames, as: :frame, locals: { open_idx: open_idx } %>
+        <% else %>
+          <div style="padding: 32px 18px; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--fg-dim);">
+            No backtrace captured for the latest event.
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <div style="min-width:0;">
+      <div class="t-eyebrow" style="padding: 4px 2px 8px;">CONTEXT</div>
+      <div class="panel" style="padding: 14px 16px;">
+        <% if ev %>
+          <div class="kv">
+            <span class="k">user</span><span class="v"><%= user_ctx["email"].presence || ev.user_identifier.presence || "—" %></span>
+            <% if (url = user_ctx["url"].presence || metadata["url"].presence) %>
+              <span class="k">url</span><span class="v"><%= url %></span>
+            <% end %>
+            <span class="k">env</span><span class="v"><%= ev.environment.presence || "—" %></span>
+            <span class="k">release</span><span class="v"><%= ev.release.presence || "—" %></span>
+            <span class="k">occurred</span><span class="v"><%= ev.occurred_at.strftime("%Y-%m-%d %H:%M:%S") %></span>
+          </div>
+        <% else %>
+          <div style="font-family: var(--mono); font-size: 11.5px; color: var(--fg-dim);">Events for this issue are past the retention window.</div>
+        <% end %>
+      </div>
+
+      <div class="t-eyebrow" style="padding: 16px 2px 8px;">AFFECTED USERS</div>
+      <div class="panel iss-ov-users">
+        <% if users.any? %>
+          <% users.first(8).each do |u| %>
+            <div class="iss-ov-user">
+              <div class="av"><%= u.to_s[0, 2].upcase %></div>
+              <span><%= u %></span>
+            </div>
+          <% end %>
+          <% if users.size > 8 %>
+            <div class="iss-ov-user more">+ <%= users.size - 8 %> more</div>
+          <% end %>
+        <% else %>
+          <div style="padding: 14px 16px; font-family: var(--mono); font-size: 11.5px; color: var(--fg-dim);">No user identifiers on recent events.</div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

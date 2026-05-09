@@ -1,0 +1,29 @@
+alpha_default:
+  project: alpha
+  name: Default
+  token: elp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  scope: 0
+
+beta_default:
+  project: beta
+  name: Default
+  token: elp_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  scope: 0
+
+admin_project_default:
+  project: admin_project
+  name: Default
+  token: elp_cccccccccccccccccccccccccccccccccccccccccccccccc
+  scope: 0
+
+over_storage_project_default:
+  project: over_storage_project
+  name: Default
+  token: elp_dddddddddddddddddddddddddddddddddddddddddddddddd
+  scope: 0
+
+team_project_default:
+  project: team_project
+  name: Default
+  token: elp_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+  scope: 0

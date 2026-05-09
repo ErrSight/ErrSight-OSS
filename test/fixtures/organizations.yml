@@ -1,0 +1,19 @@
+regular_org:
+  name: Regular Org
+  slug: regular-org
+  owner: regular
+
+admin_org:
+  name: Admin Org
+  slug: admin-org
+  owner: admin
+
+over_limit_org:
+  name: Over Limit Org
+  slug: over-limit-org
+  owner: over_limit
+
+team_org:
+  name: Team Org
+  slug: team-org
+  owner: team_owner

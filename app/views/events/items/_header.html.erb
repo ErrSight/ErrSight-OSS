@@ -1,0 +1,31 @@
+<%# Compact toolbar header: title + Issues/Events toggle + actions. Locals: mode %>
+<div class="es-ihead">
+  <h1 class="es-ihead-title">
+    <% if mode == :issues %>Issues <em>feed</em><% else %>Events <em>stream</em><% end %>
+  </h1>
+  <span class="es-ihead-sub">
+    <%= @project.slug.presence || @project.name %><% if params[:environment].present? %> / <%= params[:environment] %><% end %>
+  </span>
+
+  <div class="es-seg" role="tablist" aria-label="Issues or events">
+    <%= link_to groups_project_events_path(@project, q: params[:q].presence),
+          class: "es-seg-btn#{' on' if mode == :issues}", role: "tab", "aria-selected": mode == :issues do %>
+      Issues <span class="es-seg-count"><%= items_count_label(@items_counts[:issues]) %></span>
+    <% end %>
+    <%= link_to project_events_path(@project, q: params[:q].presence),
+          class: "es-seg-btn#{' on' if mode == :events}", role: "tab", "aria-selected": mode == :events do %>
+      Events <span class="es-seg-count"><%= items_count_label(@items_counts[:events]) %></span>
+    <% end %>
+  </div>
+
+  <span class="es-ihead-spacer"></span>
+
+  <div class="es-ihead-actions">
+    <%= link_to export_project_events_path(@project, format: :csv, q: @items_query.to_s.presence, environment: params[:environment].presence),
+          class: "btn btn-secondary btn-sm" do %>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v12m-6-6 6-6 6 6M4 20h16"/></svg>
+      Export
+    <% end %>
+    <%= link_to new_project_alert_rule_path(@project), class: "btn btn-primary btn-sm" do %>New alert<% end %>
+  </div>
+</div>

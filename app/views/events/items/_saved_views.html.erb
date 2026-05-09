@@ -1,0 +1,18 @@
+<%# Saved-view presets. Locals: mode, variant (:tabs for layout A, :chips for C). %>
+<% if variant == :chips %>
+  <div class="es-viewchips">
+    <% @saved_views.each do |v| %>
+      <%= link_to items_saved_view_href(mode, v), class: "es-viewchip#{' is-active' if v[:active]}" do %>
+        <% if v[:star] %><span class="es-view-star">★</span><% end %><%= v[:name] %><% if v[:count] %><span class="es-view-count"><%= v[:count] %></span><% end %>
+      <% end %>
+    <% end %>
+  </div>
+<% else %>
+  <div class="es-views">
+    <% @saved_views.each do |v| %>
+      <%= link_to items_saved_view_href(mode, v), class: "es-view-tab#{' is-active' if v[:active]}" do %>
+        <% if v[:star] %><span class="es-view-star">★</span><% end %><%= v[:name] %><% if v[:count] %><span class="es-view-count"><%= v[:count] %></span><% end %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

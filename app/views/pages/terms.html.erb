@@ -1,0 +1,75 @@
+<% content_for :title, "Terms — ErrSight" %>
+<% content_for :description, "Terms note for this self-hosted ErrSight OSS instance." %>
+
+<nav class="top">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <%= image_tag "errsight-wordmark-light.svg", alt: "ErrSight", class: "brand-logo", height: 36 %>
+    </a>
+    <div class="nav-links">
+      <%= link_to "Docs", docs_path %>
+      <%= link_to "Integrations", integrations_path %>
+      <%= link_to "Support", support_path %>
+    </div>
+    <div class="nav-right">
+      <% if user_signed_in? %>
+        <%= link_to "Dashboard", authenticated_root_path, class: "btn btn-primary" %>
+      <% else %>
+        <% if public_signup_allowed? %>
+          <%= link_to "Sign in", new_user_session_path, class: "btn btn-ghost" %>
+        <% end %>
+        <%= link_to primary_cta_label, primary_cta_path, class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </div>
+</nav>
+
+<section class="legal-wrap">
+  <p class="legal-date">Template — replace with your own terms before going public.</p>
+  <h1 class="legal-title">Terms <em>note</em></h1>
+
+  <div class="legal-stack">
+    <p style="font-style: italic; color: var(--fg-dim);">
+      This page is a placeholder. The <strong>operator</strong> of this
+      instance is responsible for the terms that apply to its actual use;
+      if you're a self-hoster, replace this page with your own terms in
+      <code>app/views/pages/terms.html.erb</code> before exposing the
+      instance to anyone outside your team.
+    </p>
+
+    <h2>1. About the software</h2>
+    <p>ErrSight OSS is open-source software released under the GNU Affero General Public License v3.0 (AGPLv3). The license text governs your rights to use, copy, modify, and distribute the source code. It does <em>not</em> govern your use of any specific deployment — that's between you and the operator of this instance.</p>
+
+    <p>The "ErrSight" name and logo (including the wordmark and mark image assets) are &copy; Jijo Bose and are <strong>not</strong> covered by the AGPLv3 grant. The license covers the source code only; the name and logo are reserved by the author. Forks and downstream operators must replace the name and logo before redistributing or operating a public instance.</p>
+
+    <h2>2. No warranty</h2>
+    <p>The software is provided "as is", without warranty of any kind, express or implied. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability arising from the use of the software. See the <code>LICENSE</code> file for the full disclaimer.</p>
+
+    <h2>3. Use of this instance</h2>
+    <p>If you're using this instance under someone else's operation (e.g. an internal company deployment), your access is governed by whatever agreement you have with that operator — your employment contract, an internal policy, etc.</p>
+
+    <h2>4. Operator: things to swap before you publish this page</h2>
+    <ul>
+      <li>Acceptable use clauses (what users may and may not send through the ingestion API).</li>
+      <li>Any service-level commitments you want to make.</li>
+      <li>Account suspension / termination terms.</li>
+      <li>Governing law / jurisdiction relevant to your business.</li>
+      <li>If you charge end users for access, the billing terms (ErrSight OSS has no built-in billing).</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="foot-bottom">
+      <span>© <%= Date.current.year %> Jijo Bose</span>
+      <span>
+        <%= link_to "Docs", docs_path %>
+        ·
+        <%= link_to "Privacy", privacy_path %>
+        ·
+        <%= link_to "Terms", terms_path %>
+      </span>
+    </div>
+  </div>
+</footer>

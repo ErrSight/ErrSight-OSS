@@ -1,0 +1,52 @@
+<% content_for :title, "#{@project.name} settings — ErrSight" %>
+
+<div class="page-head" style="padding-bottom: 14px;">
+  <div>
+    <div class="eyebrow"><span class="dot"></span><%= @project.name %></div>
+    <h1 style="font-family: var(--sans); font-weight: 500; letter-spacing: -0.025em; font-size: 28px; line-height: 1.15; margin: 0;">Project <em style="font-family: var(--serif); font-style: italic; color: var(--accent); font-weight: 400;">settings</em></h1>
+  </div>
+  <div>
+    <%= link_to "← Back", project_path(@project), class: "btn btn-ghost btn-sm" %>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr; gap: 14px; max-width: 640px;">
+  <section class="panel">
+    <div class="panel-head" style="padding: 10px 14px;">
+      <span class="title">General</span>
+    </div>
+    <div style="padding: 16px;">
+      <%= render "form", project: @project %>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head" style="padding: 10px 14px;">
+      <span class="title">Alerting</span>
+    </div>
+    <div style="padding: 14px 16px;">
+      <p style="margin: 0 0 12px; font-size: 13px; color: var(--fg-dim); line-height: 1.55;">Control when notifications fire and where they go.</p>
+      <div style="display:flex; flex-wrap:wrap; gap: 8px;">
+        <%= link_to "Alert rules", project_alert_rules_path(@project), class: "btn btn-secondary btn-sm" %>
+        <%= link_to "Webhook endpoints", project_webhook_endpoints_path(@project), class: "btn btn-secondary btn-sm" %>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" style="border-color: color-mix(in oklab, var(--err) 40%, var(--line));">
+    <div class="panel-head" style="padding: 10px 14px;">
+      <span class="title" style="color: var(--err);">Danger zone</span>
+    </div>
+    <div style="padding: 14px 16px; display:flex; align-items:center; justify-content:space-between; gap:14px;">
+      <div style="min-width:0;">
+        <div style="font-size:14px; font-weight:500; color: var(--fg);">Delete this project</div>
+        <div style="margin-top:3px; font-size: 12px; color: var(--fg-dim); font-family: var(--mono);">Deletes the project and all its events. Cannot be undone.</div>
+      </div>
+      <%= button_to "Delete project", project_path(@project),
+            method: :delete,
+            form: { style: "display:inline;" },
+            style: "background: var(--err); color: #fff; border: 0; border-radius: 8px; padding: 7px 12px; font-family: var(--sans); font-size: 12.5px; font-weight: 500; cursor: pointer;",
+            data: { turbo_confirm: "Are you sure? This will permanently delete #{@project.name} and all its events." } %>
+    </div>
+  </section>
+</div>

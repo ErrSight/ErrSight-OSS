@@ -1,0 +1,13 @@
+[ErrSight · <%= @organization.name %>]
+
+You're invited to <%= @organization.name %>.
+
+<%= @inviter.name || @inviter.email %> invited you to join <%= @organization.name %> on ErrSight as <%= @invitation.role.capitalize %>.
+
+ErrSight captures every exception and log line the instant it happens — grouped, fingerprinted, and attributed to the user who hit it.
+
+Accept your invitation: <%= @accept_url %>
+
+This invitation expires on <%= @invitation.expires_at.strftime("%B %-d, %Y") %>.
+
+If you didn't expect this invitation, you can safely ignore this email.

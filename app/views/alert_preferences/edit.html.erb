@@ -1,0 +1,137 @@
+<% content_for :title, "Alert preferences — ErrSight" %>
+
+<%
+  field_style = "width:100%; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 12px; font-family: var(--sans); font-size: 13.5px;"
+  # Visible pill is a sibling of the (visually hidden) checkbox; its appearance
+  # is driven entirely by the checkbox's :checked state via CSS, so clicking the
+  # label flips the toggle instantly with no JS.
+  toggle_pill = '<span class="toggle-track"><span class="toggle-thumb"></span></span>'.html_safe
+%>
+
+<div class="page-head" style="padding-bottom: 14px;">
+  <div>
+    <div class="eyebrow"><span class="dot"></span><%= @organization.name %></div>
+    <h1 style="font-family: var(--sans); font-weight: 500; letter-spacing: -0.025em; font-size: 28px; line-height: 1.15; margin: 0;">Alert <em style="font-family: var(--serif); font-style: italic; color: var(--accent); font-weight: 400;">preferences</em></h1>
+  </div>
+  <div>
+    <%= link_to "← Back", organization_path(@organization), class: "btn btn-ghost btn-sm" %>
+  </div>
+</div>
+
+<div style="display:grid; gap: 14px; max-width: 640px;">
+  <section class="panel">
+    <div class="panel-head" style="padding: 10px 14px;">
+      <span class="title">Default alert settings</span>
+    </div>
+    <div style="padding: 16px;">
+      <p style="margin: 0 0 14px; font-size: 13px; color: var(--fg-dim); line-height: 1.55;">Apply to all projects unless overridden below.</p>
+
+      <%= form_with model: @preference, url: alert_preference_path(@organization), method: :patch do |f| %>
+        <div style="display:grid; gap: 14px;">
+          <label style="display:flex; align-items:center; justify-content:space-between; cursor: pointer;">
+            <span style="font-size: 13.5px; font-weight: 500; color: var(--fg);">Email alerts</span>
+            <span style="display:inline-flex;">
+              <%= f.check_box :email_enabled, class: "toggle-input", style: "position: absolute; opacity: 0; width: 0; height: 0;" %>
+              <%= toggle_pill %>
+            </span>
+          </label>
+
+          <div>
+            <label style="display:flex; align-items:center; justify-content:space-between; cursor: pointer;">
+              <span style="font-size: 13.5px; font-weight: 500; color: var(--fg);">Slack alerts</span>
+              <span style="display:inline-flex;">
+                <%= f.check_box :slack_enabled, class: "toggle-input", style: "position: absolute; opacity: 0; width: 0; height: 0;" %>
+                <%= toggle_pill %>
+              </span>
+            </label>
+            <% unless @organization.slack_configured? %>
+              <p style="margin: 6px 0 0; font-size: 11.5px; color: var(--fg-dim); font-family: var(--mono);">Slack webhook not configured. Add one below.</p>
+            <% end %>
+          </div>
+
+          <div>
+            <%= f.label :min_level, "Minimum severity", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+            <%= f.select :min_level, [["Debug & above", 0], ["Info & above", 1], ["Warning & above", 2], ["Error & above", 3], ["Fatal only", 4]],
+                  {}, style: field_style %>
+          </div>
+
+          <div>
+            <%= f.label :digest_frequency, "Frequency", class: "t-eyebrow", style: "display:block; margin-bottom:6px;" %>
+            <%= f.select :digest_frequency, [["Immediate (per event)", "immediate"], ["Hourly digest", "hourly"]],
+                  {}, style: field_style %>
+          </div>
+        </div>
+
+        <div style="margin-top: 18px;">
+          <%= f.submit "Save preferences", class: "btn btn-primary btn-sm" %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <% if @membership&.admin? %>
+    <section class="panel">
+      <div class="panel-head" style="padding: 10px 14px;">
+        <span class="title">Slack integration</span>
+      </div>
+      <div style="padding: 14px 16px;">
+        <p style="margin: 0 0 12px; font-size: 13px; color: var(--fg-dim); line-height: 1.55;">Paste the Incoming Webhook URL from your Slack workspace. Keep it private. Anyone with it can post to your channel. <%= link_to "Setup guide →", docs_path(anchor: "slack"), style: "color: var(--accent); text-decoration: none; font-weight: 500; white-space: nowrap;" %></p>
+
+        <div style="display:flex; align-items:center; gap: 8px;">
+          <%= form_with model: @organization, url: organization_path(@organization), method: :patch, style: "flex: 1; display: flex; gap: 8px;" do |f| %>
+            <%= hidden_field_tag :return_to, "alert_preferences" %>
+            <%= f.text_field :slack_webhook_url,
+                  placeholder: "https://hooks.slack.com/services/...",
+                  style: "flex:1; background: var(--bg-3); border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 12px; font-family: var(--mono); font-size: 12px;" %>
+            <%= f.submit "Save", class: "btn btn-primary btn-sm" %>
+          <% end %>
+
+          <% if @organization.slack_configured? %>
+            <%= button_to "Send test", slack_test_organization_path(@organization),
+                  method: :post,
+                  form: { style: "display:inline;" },
+                  style: "background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent); border-radius: 8px; padding: 7px 12px; font-family: var(--sans); font-size: 12.5px; font-weight: 500; cursor: pointer;" %>
+          <% end %>
+        </div>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @projects.any? %>
+    <section class="panel">
+      <div class="panel-head" style="padding: 10px 14px;">
+        <span class="title">Per-project overrides</span>
+      </div>
+      <div>
+        <% @projects.each do |project| %>
+          <% pref = @membership.alert_preferences.find_by(project_id: project.id) %>
+          <div style="display:flex; align-items:center; justify-content:space-between; padding: var(--row-pad) 16px; border-bottom: 1px solid var(--line); gap: 14px;">
+            <div style="min-width:0;">
+              <div style="font-size: 14px; font-weight: 500; color: var(--fg);"><%= project.name %></div>
+              <div class="t-meta" style="margin-top: 3px;">
+                <% if pref %>
+                  email <%= pref.email_enabled? ? "on" : "off" %> · slack <%= pref.slack_enabled? ? "on" : "off" %> · level ≥ <%= Event.levels.key(pref.min_level)&.capitalize %>
+                <% else %>
+                  using defaults
+                <% end %>
+              </div>
+            </div>
+            <div style="display:flex; gap: 6px; align-items: center; flex-shrink: 0;">
+              <% [[:email_enabled, "Email"], [:slack_enabled, "Slack"]].each do |key, label| %>
+                <% on = pref&.public_send("#{key}?") %>
+                <% color = on ? "var(--warn)" : "var(--ok)" %>
+                <% action_label = on ? "Mute #{label}" : label %>
+                <%= form_with url: alert_preference_path(@organization), method: :patch, style: "display:inline;" do |f| %>
+                  <%= f.hidden_field :project_id, name: "alert_preference[project_id]", value: project.id %>
+                  <%= f.hidden_field key, name: "alert_preference[#{key}]", value: on ? "0" : "1" %>
+                  <%= f.submit action_label,
+                        style: "background: color-mix(in oklab, #{color} 14%, transparent); color: #{color}; border: 1px solid color-mix(in oklab, #{color} 30%, transparent); border-radius: 6px; padding: 4px 10px; font-family: var(--mono); font-size: 11px; cursor: pointer;" %>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</div>

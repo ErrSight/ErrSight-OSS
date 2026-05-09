@@ -1,0 +1,24 @@
+[ErrSight · <%= @organization.name %>]
+
+Your week in errors
+
+This week:   <%= number_with_delimiter(@stats.total_events_this_week) %> events
+New issues:  <%= @stats.new_issue_count %>
+Regressions: <%= @stats.regression_count %>
+<% if (delta = @stats.delta_pct) %>
+Change vs last week: <%= delta.positive? ? "+#{delta}%" : "#{delta}%" %>
+<% end %>
+
+<% if (top = @stats.top_issues(limit: 5)).any? %>
+Top issues:
+<% top.each do |row| %>
+  - [<%= (%w[debug info warning error fatal][row[:last_level].to_i] || 'info').upcase %>] <%= row[:last_message].to_s.truncate(80) %>  (<%= row[:project]&.name %>, <%= row[:event_count] %> events)
+<% end %>
+<% else %>
+No errors this week. Nice work.
+<% end %>
+
+Open dashboard: <%= @dashboard_url %>
+
+--
+Unsubscribe from weekly digests: <%= @unsubscribe_url %>

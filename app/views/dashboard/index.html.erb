@@ -1,0 +1,412 @@
+<% content_for :title, "Dashboard — ErrSight" %>
+
+<% primary_org = @organization || current_organization || current_user.primary_organization
+  org_slug = primary_org&.slug || "workspace"
+
+  first_event = @recent_events.first
+
+  checklist = [
+    {
+      done: @projects.any?,
+      title: "Create your first project",
+      hint: @projects.any? ? "#{@projects.first.name} · created #{time_ago_in_words(@projects.first.created_at)} ago" : "Track errors in any codebase",
+      cta: @projects.any? ? "done" : "create →",
+      href: @projects.any? ? project_path(@projects.first) : new_project_path
+    },
+    {
+      done: @total_events.to_i > 0,
+      title: "Send your first event",
+      hint: first_event ? "#{first_event.message.to_s.truncate(40)} · #{time_ago_in_words(first_event.occurred_at)} ago" : "Wire up the SDK and capture an error",
+      cta: @total_events.to_i > 0 ? "done" : "set up →",
+      href: @projects.any? ? project_path(@projects.first) : new_project_path
+    },
+    {
+      done: primary_org && primary_org.memberships.count > 1,
+      title: "Invite a teammate",
+      hint: primary_org ? "#{primary_org.memberships.count} seat#{'s' if primary_org.memberships.count != 1} filled" : "Share the workspace",
+      cta: (primary_org && primary_org.memberships.count > 1) ? "done" : "invite →",
+      href: primary_org ? organization_memberships_path(primary_org) : dashboard_path
+    },
+    {
+      done: primary_org&.slack_configured?,
+      title: "Wire up Slack alerts",
+      hint: primary_org&.slack_configured? ? "Slack webhook connected" : "Get paged when noise turns critical",
+      cta: primary_org&.slack_configured? ? "done" : "connect →",
+      href: primary_org ? edit_alert_preference_path(primary_org) : dashboard_path
+    }
+  ]
+  completed_count = checklist.count { |i| i[:done] } %>
+
+<!-- terminal breadcrumb -->
+<div class="crumb">
+  <span class="dim">~</span>
+  <span>/</span>
+  <span class="k">errsight</span>
+  <span>/</span>
+  <span class="k"><%= org_slug %></span>
+  <span>/</span>
+  <span class="k">dashboard</span>
+  <span class="caret"></span>
+</div>
+
+<!-- page head -->
+<div class="page-head">
+  <div>
+    <div class="eyebrow">
+      <span class="dot"></span>
+      ORG · <%= primary_org&.name || "—" %> · all systems operational
+    </div>
+
+    <h1 class="page-title">Dashboard <em>overview</em>.</h1>
+
+    <div class="page-sub">
+      <span>
+        <span class="k"><%= number_with_delimiter(@projects.count) %></span>
+        project<%= 's' unless @projects.count == 1 %>
+      </span>
+
+      <span>
+        <span class="k"><%= number_with_delimiter(@total_events) %></span>
+        event<%= 's' unless @total_events == 1 %> captured
+      </span>
+
+      <% if first_event %>
+        <span>
+          last event ·
+          <span class="k"><%= time_ago_in_words(first_event.occurred_at) %> ago</span>
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <div style="display:flex; gap: 10px;">
+    <%= link_to search_path, class: "btn btn-secondary" do %>
+      <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M21 21l-5-5m2-6a8 8 0 1 1-16 0 8 8 0 0 1 16 0z" />
+      </svg>
+      Search events <span class="kbd">⌘K</span>
+    <% end %>
+
+    <%= link_to new_project_path, class: "btn btn-primary" do %>
+      <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.4"
+      >
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      New project
+    <% end %>
+  </div>
+</div>
+
+<!-- stat strip -->
+<div class="stat-strip">
+  <div class="stat">
+    <div class="l">Events · total</div>
+
+    <div class="n">
+      <%= number_with_delimiter(@total_events) %><em>/all</em>
+    </div>
+
+    <div class="sub">
+      <%= first_event ? "last #{time_ago_in_words(first_event.occurred_at)} ago" : "no events yet" %>
+    </div>
+  </div>
+
+  <div class="stat">
+    <div class="l">Projects</div>
+    <div class="n"><%= @projects.count %></div>
+    <div class="sub">tracked under <%= primary_org&.name || "—" %></div>
+  </div>
+
+  <div class="stat">
+    <div class="l">Active issues</div>
+    <div class="n"><%= number_with_delimiter(@projects.sum(:events_count)) %></div>
+    <div class="sub">events stored across projects</div>
+  </div>
+</div>
+
+<!-- PROJECTS -->
+<div class="section">
+  <div class="section-head">
+    <div>
+      <div class="section-label">01 · Projects</div>
+      <h2 class="section-title">Shipping under your <em>watch</em>.</h2>
+    </div>
+
+    <div class="section-action">
+      <%= link_to "new project +", new_project_path %>
+      <%= link_to "view all →", projects_path, class: "accent" %>
+    </div>
+  </div>
+
+  <div class="panel">
+    <% if @projects.empty? %>
+      <div class="panel-empty">
+        <div class="t">No projects yet</div>
+
+        <div class="d">
+          Create your first project to start capturing errors.
+        </div>
+
+        <%= link_to "Create project", new_project_path, class: "btn btn-primary btn-sm" %>
+      </div>
+    <% else %>
+      <% @projects.first(5).each do |project| %>
+        <%= link_to project_path(project), class: "proj-row" do %>
+          <div class="hash">
+            #<%= project.id.to_s(16).rjust(4, '0')[-4..] %>
+          </div>
+
+          <div class="name">
+            <div class="n"><%= project.name %></div>
+
+            <div class="meta">
+              <%= number_with_delimiter(project.events_count) %>
+              event<%= 's' unless project.events_count == 1 %> ·
+              <%= number_to_human_size(project.storage_bytes) %>
+            </div>
+          </div>
+
+          <div class="env <%= 'paused' if project.ingestion_paused? %>">
+            <span class="pulse"></span><%= project.ingestion_paused? ? 'paused' : 'production' %>
+          </div>
+
+          <div class="spark-mini">
+            <% 12.times do |i| %>
+              <% h = [6, 8, 4, 9, 5, 11, 7, 6, 10, 8, 9, project.events_count > 0 ? 72 : 4][i] %>
+
+              <i
+                <%= 'class="err"'.html_safe if i == 11 && project.events_count > 0 %>
+                style="height: <%= h %>%"
+              ></i>
+            <% end %>
+          </div>
+
+          <div class="actions">
+            <span>events</span>
+            <span class="arrow">→</span>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<!-- RECENT EVENTS feed -->
+<% level_group = ->(lvl) {
+    case lvl.to_s
+    when "error", "fatal" then "err"
+    when "warning"        then "warn"
+    when "info"           then "info"
+    else                       "dbg"
+    end
+  } %>
+
+<div class="section">
+  <div class="section-head">
+    <div>
+      <div class="section-label">02 · Live feed</div>
+      <h2 class="section-title">Recent events<em>.</em></h2>
+    </div>
+
+    <div class="section-action">
+      <% if @projects.any? %>
+        <%= link_to "export", export_project_events_path(@projects.first, format: :csv) %>
+        <%= link_to "open stream →", project_events_path(@projects.first), class: "accent" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="feed"
+       data-controller="dash-feed"
+       data-dash-feed-organization-id-value="<%= primary_org&.id %>">
+    <div class="feed-chrome">
+      <span class="traffic">
+        <i></i><i></i><i></i>
+      </span>
+
+      <div class="feed-tabs">
+        <span class="feed-tab active">~/errsight/<%= org_slug %> · events</span>
+      </div>
+
+      <div class="right">
+        <span class="live-badge">
+          <span class="blink"></span>
+          LIVE
+        </span>
+      </div>
+    </div>
+
+    <div class="feed-toolbar">
+      <button type="button" class="chip active" data-filter="all">● all</button>
+      <button type="button" class="chip" data-filter="err">error</button>
+      <button type="button" class="chip" data-filter="warn">warn</button>
+      <button type="button" class="chip" data-filter="info">info</button>
+
+      <span class="search">
+        <svg
+          width="11"
+          height="11"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M21 21l-5-5m2-6a8 8 0 1 1-16 0 8 8 0 0 1 16 0z" />
+        </svg>
+
+        <input
+          type="text"
+          placeholder="grep … "
+          data-dash-feed-target="search"
+          autocomplete="off"
+        >
+      </span>
+
+      <span class="count" data-dash-feed-target="count">
+        <%= pluralize(@recent_events.size, 'event') %>
+      </span>
+    </div>
+
+    <div class="feed-list" data-dash-feed-target="list">
+      <% if @recent_events.any? %>
+        <% @recent_events.each do |event| %>
+          <% bucket = level_group.call(event.level) %>
+          <% msg = event.message.to_s.strip %>
+          <% head, rest = msg.include?(":") ? msg.split(":", 2).map(&:strip) : [msg, nil] %>
+
+          <%= link_to project_event_path(event.project, event), class: "feed-row", data: { level: bucket, text: msg.downcase } do %>
+            <div class="ts">
+              <%= time_ago_in_words(event.occurred_at) + " ago" %>
+            </div>
+
+            <div>
+              <span class="lvl <%= bucket %>">
+                <%= event.level.to_s.upcase %>
+              </span>
+            </div>
+
+            <div class="txt">
+              <span><%= head %></span>
+
+              <% if rest.present? %>
+                <span class="dim">·</span>
+                <span class="acc"><%= rest %></span>
+              <% end %>
+            </div>
+
+            <div class="ctx">
+              <span class="proj"><%= event.project.name %></span>
+
+              <% if event.environment.present? %>
+                <span style="color:var(--fg-dimmer)">·</span>
+                <%= event.environment %>
+              <% end %>
+            </div>
+
+            <div class="open">→</div>
+          <% end %>
+        <% end %>
+      <% else %>
+        <div class="feed-row feed-empty" data-dash-feed-target="empty">
+          <span class="dim">waiting for events...</span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- GETTING STARTED + FIRST EVENT (empty-state treatment: getting-started) -->
+<% if completed_count < checklist.size %>
+  <div class="two-up">
+    <div class="checklist">
+      <div class="h">
+        <div class="title">Get to <em>zero noise</em>.</div>
+
+        <div class="prog">
+          <%= completed_count %> of <%= checklist.size %> complete
+        </div>
+      </div>
+
+      <% checklist.each do |item| %>
+        <div class="chk-item <%= 'done' if item[:done] %>">
+          <div class="chk-box">
+            <% if item[:done] %>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+              >
+                <path d="M5 12l5 5L20 7" />
+              </svg>
+            <% end %>
+          </div>
+
+          <div class="chk-body">
+            <div class="t"><%= item[:title] %></div>
+            <div class="d"><%= item[:hint] %></div>
+          </div>
+
+          <%= link_to item[:cta], item[:href], class: "go" %>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="first-event">
+      <% if first_event %>
+        <span class="badge-first">★ First event · captured</span>
+        <h3 class="ev-title">Your first exception came <em>through</em>.</h3>
+        <div class="code">
+          <span class="c"># captured <%= first_event.occurred_at.strftime("%H:%M:%S.%L") %> UTC · env: <%= first_event.environment %></span>
+          <span class="k">ErrSight::Event</span>.
+          <span class="acc">capture</span>(level:
+          <span class="s">"<%= first_event.level %>"</span>, message:
+          <span class="s">"<%= first_event.message.to_s.gsub('"', '\"').truncate(60) %>"</span>,
+          project: <span class="s">"<%= first_event.project.name %>"</span>,
+          fingerprint: <span class="s">"<%= first_event.fingerprint %>"</span>)
+        </div>
+        <div class="foot">
+          <span>
+            fingerprint ·
+            <span class="hash"><%= first_event.fingerprint %></span>
+          </span>
+
+          <%= link_to "Open event →", project_event_path(first_event.project, first_event) %>
+        </div>
+      <% else %>
+        <span class="badge-first">★ Get started</span>
+        <h3 class="ev-title">
+          Drop ErrSight in and we'll start <em>listening</em>.
+        </h3>
+        <div class="code">
+          <span class="c"># Gemfile</span> <span class="k">gem</span>
+          <span class="s">"errsight"</span>
+          <span class="c"># config/initializers/errsight.rb</span>
+          <span class="k">ErrSight</span>. <span class="acc">configure</span>
+          <span class="k">do</span> |c| c.api_key =
+          <span class="s">"&lt;your project key&gt;"</span> c.environment =
+          <span class="k">Rails</span>.env <span class="k">end</span>
+        </div>
+        <div class="foot">
+          <span>first event lands here, live.</span>
+          <%= link_to "Create project →", new_project_path %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

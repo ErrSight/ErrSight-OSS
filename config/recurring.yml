@@ -1,15 +1,60 @@
-# examples:
-#   periodic_cleanup:
-#     class: CleanSoftDeletedRecordsJob
-#     queue: background
-#     args: [ 1000, { batch_size: 500 } ]
-#     schedule: every hour
-#   periodic_cleanup_with_command:
-#     command: "SoftDeletedRecord.due.delete_all"
-#     priority: 2
-#     schedule: at 5am every day
+# Scheduled jobs run by Solid Queue's recurring scheduler.
+#
+# To change a job's schedule, edit the `schedule:` line below. To disable a job,
+# comment out its block. The scheduler in this file runs in both development and
+# production (the development block inherits from production via YAML anchor).
+#
+# See app/jobs/ for each job class. README "Scheduled Jobs" section documents
+# what each job does and what to tune.
 
-production:
+production: &production
+  # Trim finished Solid Queue rows so the queue table doesn't grow unbounded.
   clear_solid_queue_finished_jobs:
-    command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
-    schedule: every hour at minute 12
+    command: "SolidQueue::Job.clear_finished_in_batches(finished_before: 5.minutes.ago, sleep_between_batches: 0.3)"
+    schedule: every 5 minutes
+
+  # Emits queue depth / latency / dead-letter metrics to the log every minute.
+  report_queue_health:
+    class: ReportQueueHealthJob
+    queue: maintenance
+    schedule: every minute
+
+  # Hourly per-membership digest send (events captured in the last hour, gated
+  # by each member's alert preferences).
+  send_alert_digest:
+    class: SendAlertDigestJob
+    queue: alerts
+    schedule: every hour at minute 0
+
+  # Weekly "what broke last week" summary, opt-out per membership.
+  send_weekly_digests:
+    class: SendWeeklyDigestsJob
+    queue: alerts
+    schedule: every Monday at 13:00
+
+  # Drops stale pending invitations (default 7 days from creation).
+  expire_invitations:
+    class: ExpireInvitationsJob
+    queue: default
+    schedule: at 3am every day
+
+  # Hard-deletes orgs that have been soft-deleted past Organization::RETENTION_WINDOW.
+  purge_discarded_organizations:
+    class: PurgeDiscardedOrganizationsJob
+    queue: maintenance
+    schedule: at 4am every day
+
+  # Hard-deletes users that have been soft-deleted past User::RETENTION_WINDOW.
+  purge_discarded_users:
+    class: PurgeDiscardedUsersJob
+    queue: maintenance
+    schedule: at 4:30am every day
+
+  # Prunes events older than RETENTION_DAYS env var (default 30, set 0 to disable).
+  prune_events_by_retention:
+    class: PruneEventsByRetentionJob
+    queue: maintenance
+    schedule: at 4:15am every day
+
+development:
+  <<: *production

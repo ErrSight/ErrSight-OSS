@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-gray-950 text-gray-100;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-indigo-500;
+  }
+
+  pre {
+    @apply whitespace-pre-wrap break-words;
+  }
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  @keyframes log-row-arrive {
+    from { background-color: rgb(20 83 45 / 0.35); }
+    to   { background-color: transparent; }
+  }
+
+  @keyframes log-row-arrive-error {
+    from { background-color: rgb(127 29 29 / 0.45); }
+    to   { background-color: transparent; }
+  }
+
+  .log-row--new {
+    animation: log-row-arrive 2.5s ease-out forwards;
+  }
+
+  .log-row--new-error {
+    animation: log-row-arrive-error 2.5s ease-out forwards;
+  }
+}
