@@ -41,7 +41,7 @@ gem "ransack"
 gem "mission_control-jobs"
 
 # Pagination
-gem "pagy", "~> 9.0"
+gem "pagy", "~> 43.5"
 
 # Rate limiting
 gem "rack-attack"
